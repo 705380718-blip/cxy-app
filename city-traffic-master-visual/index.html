@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#8fd8ff" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>城市交通大师</title>
+  </head>
+  <body>
+    <main id="app" class="app-shell">
+      <canvas id="city-canvas" aria-label="城市交通大师视觉原型画布"></canvas>
+      <section class="top-toolbar" aria-label="城市工具栏">
+        <div class="toolbar-group" role="group" aria-label="道路设施">
+          <button class="tool-button" data-action="tool-road" type="button" aria-label="道路"><span class="button-icon icon-road" aria-hidden="true"></span><strong>道路</strong></button>
+          <button class="tool-button" data-action="tool-overpass" type="button" aria-label="立交桥"><span class="button-icon icon-overpass" aria-hidden="true"></span><strong>立交桥</strong></button>
+          <button class="tool-button" data-action="tool-roadwork" type="button" aria-label="道路施工"><span class="button-icon icon-roadwork" aria-hidden="true"></span><strong>施工</strong></button>
+          <button class="tool-button" data-action="tool-trafficLight" type="button" aria-label="红绿灯十字路口"><span class="button-icon icon-traffic-light" aria-hidden="true"></span><strong>红绿灯</strong></button>
+          <button class="tool-button" data-action="tool-busStop" type="button" aria-label="公交站"><span class="button-icon icon-bus-stop" aria-hidden="true"></span><strong>公交站</strong></button>
+        </div>
+        <div class="toolbar-group" role="group" aria-label="城市组件">
+          <button class="tool-button" data-action="tool-building" type="button" aria-label="建筑"><span class="button-icon icon-building" aria-hidden="true"></span><strong>建筑</strong></button>
+          <button class="tool-button" data-action="tool-park" type="button" aria-label="公园"><span class="button-icon icon-park" aria-hidden="true"></span><strong>公园</strong></button>
+        </div>
+        <div class="toolbar-group" role="group" aria-label="车辆">
+          <button class="tool-button" data-action="tool-sedan" type="button" aria-label="小轿车"><span class="button-icon icon-car" aria-hidden="true"></span><strong>小轿车</strong></button>
+          <button class="tool-button" data-action="tool-bus" type="button" aria-label="公交车"><span class="button-icon icon-bus" aria-hidden="true"></span><strong>公交车</strong></button>
+          <button class="tool-button" data-action="tool-offroad" type="button" aria-label="越野车"><span class="button-icon icon-offroad" aria-hidden="true"></span><strong>越野车</strong></button>
+          <button class="tool-button" data-action="tool-sweeper" type="button" aria-label="扫地车"><span class="button-icon icon-sweeper" aria-hidden="true"></span><strong>扫地车</strong></button>
+          <button class="tool-button danger" data-action="delete-vehicle" type="button" aria-label="删除选中或最近添加的车辆"><span class="button-icon icon-trash" aria-hidden="true"></span><strong>删车</strong></button>
+        </div>
+        <div class="toolbar-group" role="group" aria-label="城市操作">
+          <button class="tool-button primary" data-action="toggle-running" type="button" aria-label="暂停城市动线"><span class="button-icon icon-play" aria-hidden="true"></span><strong>暂停</strong></button>
+          <button class="tool-button" data-action="cycle-weather" type="button" aria-label="切换天气"><span class="button-icon icon-weather" aria-hidden="true"></span><strong>天气</strong></button>
+          <button class="tool-button" data-action="toggle-night" type="button" aria-label="切换昼夜"><span class="button-icon icon-night" aria-hidden="true"></span><strong>昼夜</strong></button>
+          <button class="tool-button" data-action="city-check" type="button" aria-label="城市体检"><span class="button-icon icon-check" aria-hidden="true"></span><strong>体检</strong></button>
+          <button class="tool-button danger" data-action="delete-cell" type="button" aria-label="删除选中格子"><span class="button-icon icon-trash" aria-hidden="true"></span><strong>删格</strong></button>
+          <button class="tool-button" data-action="reset-city" type="button" aria-label="重置当前城市"><span class="button-icon icon-reset" aria-hidden="true"></span><strong>重置</strong></button>
+          <button class="tool-button" data-action="new-city" type="button" aria-label="新建城市"><span class="button-icon icon-new-city" aria-hidden="true"></span><strong>新建</strong></button>
+          <select id="city-save-select" class="city-save-select" aria-label="选择已保存城市"></select>
+          <button class="tool-button danger" data-action="delete-city" type="button" aria-label="删除当前城市"><span class="button-icon icon-trash" aria-hidden="true"></span><strong>删城</strong></button>
+          <button class="tool-button" data-action="restore-city" type="button" aria-label="恢复最近删除的城市"><span class="button-icon icon-reset" aria-hidden="true"></span><strong>恢复</strong></button>
+          <button class="tool-button" data-action="cloud-login" type="button" aria-label="登录并同步到云端"><span class="button-icon icon-save" aria-hidden="true"></span><strong>云同步</strong></button>
+          <button class="tool-button" data-action="save" type="button" aria-label="保存"><span class="button-icon icon-save" aria-hidden="true"></span><strong>保存</strong></button>
+        </div>
+      </section>
+      <aside id="status-card" class="status-card" aria-live="polite"></aside>
+      <section id="road-name-popover" class="road-name-popover" hidden></section>
+      <section id="city-check-modal" class="city-check-modal" hidden></section>
+      <div id="toast" class="toast" hidden></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
