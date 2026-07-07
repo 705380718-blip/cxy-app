@@ -28,6 +28,19 @@ npm test
 npm run build
 ```
 
+### Geometry App
+
+路径：`geometry-app/`
+
+儿童几何学习小应用，支持 2D/3D 图形创建、公式计算、知识卡片、互动练习、图形对比、尺寸标注和 iPad/电脑视角操作。
+
+验证方式：
+
+```bash
+cd geometry-app
+node --test tests/geometry-app.test.mjs
+```
+
 ## Notes
 
 本仓库不提交依赖目录、构建产物、本地数据库、运行日志、私有配置和导出文件。

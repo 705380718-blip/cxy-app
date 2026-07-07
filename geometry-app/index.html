@@ -1,0 +1,2818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#FFF5F5">
+    <title>几何小达人 - 快乐学几何</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFF5F5'/%3E%3Cpath d='M18 44h28L32 18 18 44Z' fill='%23FF6B6B'/%3E%3Ccircle cx='43' cy='22' r='8' fill='none' stroke='%234ECDC4' stroke-width='5'/%3E%3C/svg%3E">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/DragControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --bg: #FFF5F5;
+            --panel: #FFFFFF;
+            --text: #2D3436;
+            --border: #FFE0E0;
+            --drawer-width: 280px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            overflow: hidden;
+            height: 100%;
+            height: -webkit-fill-available;
+            overscroll-behavior: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .title-font {
+            font-family: 'ZCOOL KuaiLe', cursive;
+        }
+
+        .app-title {
+            font-size: 24px;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        .shape-list-item:focus-visible {
+            outline: 3px solid rgba(255, 107, 107, 0.35);
+            outline-offset: 3px;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            touch-action: none;
+        }
+        #canvas-container canvas {
+            touch-action: none;
+        }
+
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+        }
+
+        .ui-layer > * {
+            pointer-events: auto;
+        }
+
+        .sidebar {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            bottom: 16px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 2px solid var(--border);
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), #FF8E8E);
+            color: white;
+            text-align: center;
+        }
+
+        .shape-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 16px;
+        }
+
+        .shape-btn {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 96px;
+            font-family: inherit;
+            color: inherit;
+        }
+
+        .shape-btn:hover {
+            transform: translateY(-4px) scale(1.05);
+            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.2);
+        }
+
+        .shape-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .shape-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .shape-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .panel-section {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #FFF8F8, #FFF);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+
+        .formula-box {
+            background: var(--accent);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text);
+            border: 2px dashed #FFD93D;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .result-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            padding: 12px 24px;
+            border-radius: 50px;
+            border: 2px solid var(--border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            font-size: 13px;
+            color: #666;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .hint-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hint-key {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .property-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
+            margin-top: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .property-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #888;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            padding: 16px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #FF5252;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #3DBDB5;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #FF8E8E;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #FF6B6B;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .shape-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .shape-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .shape-list-item:hover {
+            border-color: var(--primary);
+        }
+
+        .shape-list-item.active {
+            border-color: var(--primary);
+            background: #FFF0F0;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #FF6B6B;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #FFE0E0;
+        }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .dimension-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .badge-2d {
+            background: #E3F2FD;
+            color: #1976D2;
+        }
+
+        .badge-3d {
+            background: #F3E5F5;
+            color: #7B1FA2;
+        }
+
+        /* 侧边栏折叠按钮 */
+        .sidebar-toggle {
+            display: none;
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.95);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            cursor: pointer;
+            z-index: 20;
+            font-size: 22px;
+            color: var(--primary);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .sidebar-toggle:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .sidebar-toggle.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 一键复位按钮 */
+        .reset-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.95);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            cursor: pointer;
+            z-index: 20;
+            font-size: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .reset-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: rotate(-180deg);
+        }
+        .reset-btn:active {
+            transform: rotate(-180deg) scale(0.95);
+        }
+
+        /* 选中脉冲动画 */
+        @keyframes selectionPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* 操作提示适配触摸 */
+        @media (pointer: coarse) {
+            .controls-hint {
+                bottom: 16px;
+                padding: 10px 16px;
+                font-size: 12px;
+                gap: 12px;
+                border-radius: 16px;
+            }
+            .hint-key {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+        }
+
+        /* 响应式：竖屏 / 小屏 */
+        @media (max-width: 768px) {
+            :root {
+                --drawer-width: min(300px, 86vw);
+            }
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: var(--drawer-width);
+                max-width: calc(100vw - 56px);
+                border-radius: 0;
+                z-index: 100;
+                transform: translateX(-100%);
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: none;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: 8px 0 32px rgba(0,0,0,0.15);
+                visibility: visible;
+                pointer-events: auto;
+            }
+            .sidebar-toggle {
+                display: flex;
+            }
+            .sidebar-toggle.shifted {
+                left: calc(var(--drawer-width) - 52px);
+                z-index: 101;
+            }
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.3);
+                z-index: 99;
+                pointer-events: auto;
+                cursor: pointer;
+            }
+            .sidebar-backdrop.show {
+                display: block;
+            }
+            .controls-hint {
+                bottom: 16px;
+                left: 70px;
+                right: 16px;
+                transform: none;
+                font-size: 12px;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .sidebar-toggle {
+                display: none !important;
+            }
+            .sidebar-backdrop {
+                display: none !important;
+            }
+        }
+
+        /* 功能5: 公式逐步展开动画 */
+        .formula-box { position: relative; }
+        .formula-step { opacity: 0; transform: translateY(8px); transition: all 0.4s ease; display: block; margin-bottom: 4px; }
+        .formula-step.show { opacity: 1; transform: translateY(0); }
+        .formula-toggle { font-size: 12px; color: var(--primary); cursor: pointer; margin-bottom: 6px; display: inline-block; background: none; border: none; padding: 0; font-family: inherit; }
+        .formula-toggle:hover { text-decoration: underline; }
+        .formula-step[hidden] { display: none; }
+
+        /* 功能1: 知识卡片面板 */
+        .knowledge-card {
+            background: linear-gradient(135deg, #F0F7FF, #FFF);
+            border: 2px solid #B3D9FF;
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 8px;
+        }
+        .knowledge-card .k-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1565C0;
+            margin-bottom: 6px;
+        }
+        .knowledge-card .k-define {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .knowledge-card .k-section {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1976D2;
+            margin-bottom: 4px;
+            margin-top: 8px;
+        }
+        .knowledge-card .k-item {
+            font-size: 11px;
+            color: #666;
+            padding: 2px 0 2px 12px;
+            line-height: 1.5;
+        }
+
+        /* 功能2: 练习模态窗口 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+            padding: 32px;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .modal-close:hover {
+            background: #f0f0f0;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .modal-question {
+            font-size: 15px;
+            color: var(--text);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        .modal-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            margin-bottom: 12px;
+            font-family: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .modal-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,107,107,0.15);
+        }
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .modal-btns button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .modal-result {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .modal-result.correct {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+        .modal-result.wrong {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+
+        /* 功能4: 对比面板 */
+        .compare-panel {
+            border: 2px solid var(--secondary);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #F0FFFA, #FFF);
+        }
+        .compare-panel .compare-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .compare-panel .compare-item {
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+        .compare-panel .compare-item.a {
+            background: #FFF0F0;
+            border-left: 3px solid var(--primary);
+        }
+        .compare-panel .compare-item.b {
+            background: #F0F5FF;
+            border-left: 3px solid #4D96FF;
+        }
+        .compare-item .ci-name {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .compare-item .ci-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            color: #555;
+        }
+        .compare-item .ci-row span:last-child {
+            font-weight: 700;
+            color: var(--text);
+        }
+        .compare-btn {
+            background: none;
+            border: 1px solid var(--secondary);
+            color: var(--secondary);
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 4px;
+            transition: all 0.2s;
+        }
+        .compare-btn:hover {
+            background: var(--secondary);
+            color: white;
+        }
+        .compare-btn.added {
+            background: var(--secondary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<!-- 移动端侧边栏开关 -->
+<button class="sidebar-toggle" id="sidebarToggle" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="打开图形面板" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true" onclick="closeSidebar()"></div>
+
+<!-- 一键复位 -->
+<button class="reset-btn" id="resetBtn" type="button" onclick="resetCamera()" title="复位视角" aria-label="复位视角">⟳</button>
+
+<div class="ui-layer">
+    <aside class="sidebar" id="sidebar" aria-label="几何工具面板" onclick="event.stopPropagation()">
+        <div class="sidebar-header">
+            <h1 class="title-font app-title">几何小达人</h1>
+            <p class="app-subtitle">拖拽图形，探索几何世界！</p>
+        </div>
+
+        <div class="scroll-area">
+            <div class="panel-section">
+                <div class="panel-title">
+                    <span>📐</span> 添加图形
+                </div>
+                <div class="shape-grid">
+                    <button type="button" class="shape-btn" aria-label="添加正方形" onclick="addShape('square')">
+                        <div class="shape-icon">⬜</div>
+                        <div class="shape-label">正方形</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加长方形" onclick="addShape('rectangle')">
+                        <div class="shape-icon">▭</div>
+                        <div class="shape-label">长方形</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加圆形" onclick="addShape('circle')">
+                        <div class="shape-icon">⭕</div>
+                        <div class="shape-label">圆形</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加等边三角形" onclick="addShape('equilateralTriangle')">
+                        <div class="shape-icon">🔺</div>
+                        <div class="shape-label">等边三角形</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加等腰三角形" onclick="addShape('isoscelesTriangle')">
+                        <div class="shape-icon">📐</div>
+                        <div class="shape-label">等腰三角形</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加平行四边形" onclick="addShape('parallelogram')">
+                        <div class="shape-icon">▱</div>
+                        <div class="shape-label">平行四边形</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加梯形" onclick="addShape('trapezoid')">
+                        <div class="shape-icon">⏢</div>
+                        <div class="shape-label">梯形</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加立方体" onclick="addShape('cube')">
+                        <div class="shape-icon">🎲</div>
+                        <div class="shape-label">立方体</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加球体" onclick="addShape('sphere')">
+                        <div class="shape-icon">⚪</div>
+                        <div class="shape-label">球体</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加圆柱体" onclick="addShape('cylinder')">
+                        <div class="shape-icon">🥫</div>
+                        <div class="shape-label">圆柱体</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加圆锥体" onclick="addShape('cone')">
+                        <div class="shape-icon">🔻</div>
+                        <div class="shape-label">圆锥体</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加长方体" onclick="addShape('cuboid')">
+                        <div class="shape-icon">📦</div>
+                        <div class="shape-label">长方体</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加三棱柱" onclick="addShape('triangularPrism')">
+                        <div class="shape-icon">🔷</div>
+                        <div class="shape-label">三棱柱</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加四棱锥" onclick="addShape('squarePyramid')">
+                        <div class="shape-icon">🔶</div>
+                        <div class="shape-label">四棱锥</div>
+                    </button>
+                    <button type="button" class="shape-btn" aria-label="添加圆台" onclick="addShape('frustum')">
+                        <div class="shape-icon">🎗️</div>
+                        <div class="shape-label">圆台</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">
+                    <span>📋</span> 场景中的图形
+                </div>
+                <div id="shapeList" class="shape-list">
+                    <div style="text-align:center;color:#999;font-size:13px;padding:20px;">
+                        还没有图形，点击上方添加！
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section" id="propertiesPanel" style="display:none;">
+                <div class="panel-title">
+                    <span>⚙️</span> 属性设置
+                </div>
+                <div id="propertyInputs"></div>
+            </div>
+
+            <div class="panel-section" id="calcPanel" style="display:none;">
+                <div class="panel-title">
+                    <span>🔢</span> 计算结果
+                </div>
+                <div id="calcResults" class="info-card"></div>
+                <div id="formulaDisplay" class="formula-box" aria-live="polite"></div>
+            </div>
+
+            <!-- 功能1: 知识卡片面板 -->
+            <div class="panel-section" id="knowledgePanel" style="display:none;">
+                <div class="panel-title">
+                    <span>💡</span> 知识卡片
+                </div>
+                <div id="knowledgeContent"></div>
+            </div>
+
+            <!-- 功能4: 对比面板 -->
+            <div class="panel-section" id="compareSection" style="display:none;">
+                <div class="panel-title">
+                    <span>⚖️</span> 图形对比
+                </div>
+                <div id="comparePanel"></div>
+            </div>
+        </div>
+
+        <div class="action-btns">
+            <button type="button" class="action-btn btn-secondary" onclick="clearAll()">清空</button>
+            <button type="button" class="action-btn btn-danger" onclick="deleteSelected()">删除</button>
+        </div>
+        <div class="action-btns" style="padding-top:0">
+            <button type="button" class="action-btn btn-outline" id="wireframeToggle" onclick="toggleWireframe()">骨架透视</button>
+            <button type="button" class="action-btn btn-outline" onclick="openPracticeModal()">练习模式</button>
+        </div>
+        <div class="action-btns" style="padding-top:0">
+            <button type="button" class="action-btn btn-outline" onclick="clearComparison()">清除对比</button>
+        </div>
+    </aside>
+
+    <div class="controls-hint">
+        <div class="hint-item" id="hintMouse1">
+            <span class="hint-key">左键拖拽</span>
+            <span>移动图形</span>
+        </div>
+        <div class="hint-item" id="hintMouse2">
+            <span class="hint-key">右键拖拽</span>
+            <span>旋转视角</span>
+        </div>
+        <div class="hint-item" id="hintMouse3">
+            <span class="hint-key">滚轮</span>
+            <span>缩放</span>
+        </div>
+        <div class="hint-item" id="hintTouch1" style="display:none">
+            <span class="hint-key">单指拖拽</span>
+            <span>移动图形</span>
+        </div>
+        <div class="hint-item" id="hintTouch2" style="display:none">
+            <span class="hint-key">双指拖拽</span>
+            <span>旋转 / 缩放</span>
+        </div>
+    </div>
+
+    <!-- 功能2: 练习模式模态窗口 -->
+    <div class="modal-overlay" id="practiceModal" role="dialog" aria-modal="true" aria-labelledby="practiceTitle" aria-describedby="practiceQuestion" aria-hidden="true" onclick="closePracticeModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <button type="button" class="modal-close" aria-label="关闭练习模式" onclick="closePracticeModal()">&times;</button>
+            <div class="modal-title" id="practiceTitle">几何练习</div>
+            <div class="modal-question" id="practiceQuestion" aria-live="polite"></div>
+            <input type="number" class="modal-input" id="practiceAnswer" aria-label="输入你的答案，保留两位小数" placeholder="输入你的答案（保留两位小数）">
+            <div class="modal-btns">
+                <button type="button" style="background:var(--primary);color:white;" onclick="submitPracticeAnswer()">提交答案</button>
+                <button type="button" style="background:var(--secondary);color:white;" onclick="nextPracticeQuestion()">下一题</button>
+            </div>
+            <div id="practiceResult" aria-live="polite"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== 知识数据库（功能1） ====================
+const knowledgeDB = {
+    square: { name: '正方形', define: '四条边长度相等，四个角都是直角的四边形', features: ['四条边都相等', '四个角都是90度', '是特殊的长方形'], examples: ['手帕、地砖、棋盘格子', '窗户上的方格'] },
+    rectangle: { name: '长方形', define: '对边相等，四个角都是直角的四边形', features: ['对边相等且平行', '四个角都是90度', '有两条对称轴'], examples: ['课本封面、门、黑板', '手机屏幕、餐桌'] },
+    circle: { name: '圆形', define: '到一个定点（圆心）距离等于定长（半径）的所有点的集合', features: ['没有角', '没有边', '是最完美的对称图形'], examples: ['车轮、钟表表盘、硬币', '披萨、满月、盘子'] },
+    equilateralTriangle: { name: '等边三角形', define: '三条边长度都相等的三角形', features: ['三条边都相等', '三个角都是60度', '有三条对称轴'], examples: ['交通警示三角牌', '蜂巢的每个格子'] },
+    isoscelesTriangle: { name: '等腰三角形', define: '有两条边长度相等的三角形', features: ['两条腰相等', '两个底角相等', '有一条对称轴'], examples: ['屋顶的三角形', '风筝的形状', '灯罩侧面'] },
+    parallelogram: { name: '平行四边形', define: '两组对边分别平行且相等的四边形', features: ['对边平行且相等', '对角相等', '没有直角（除非是长方形）'], examples: ['推拉门的侧面', '篮球场的形状', '伸缩门的每片'] },
+    trapezoid: { name: '梯形', define: '只有一组对边平行的四边形', features: ['只有一组对边平行', '另一组对边不平行', '等腰梯形的两腰相等'], examples: ['台灯的梯形底座', '某些桥墩的截面', '水坝的截面'] },
+    cube: { name: '立方体', define: '用六个完全相同的正方形围成的立体图形', features: ['6个面都是正方形', '12条棱长度相等', '8个顶点'], examples: ['骰子、魔方', '积木块、快递箱子'] },
+    sphere: { name: '球体', define: '空间中到定点距离等于定长的所有点的集合', features: ['只有一个面', '没有棱和顶点', '从任何方向看都是圆'], examples: ['足球、篮球', '地球仪、弹珠', '泡泡（近似球形）'] },
+    cylinder: { name: '圆柱体', define: '两个完全相同的圆面和一个曲面围成的立体图形', features: ['上下两个圆面相等', '侧面展开是长方形', '从侧面看是长方形'], examples: ['易拉罐、蜡烛', '柱子、铅笔（近似）', '水管'] },
+    cone: { name: '圆锥体', define: '一个圆面和一个曲面（从顶点到底面圆周）围成的立体图形', features: ['底面是圆形', '只有一个顶点', '侧面展开是扇形'], examples: ['冰淇淋甜筒', '生日帽、帐篷尖顶', '交通锥（路障）'] },
+    cuboid: { name: '长方体', define: '由六个长方形围成的立体图形', features: ['6个面都是长方形', '相对的面完全相同', '12条棱，分三组各4条相等'], examples: ['砖头、书本', '冰箱、衣柜', '鞋盒'] },
+    triangularPrism: { name: '三棱柱', define: '底面是三角形，沿垂直方向拉伸而成的立体图形', features: ['2个三角形底面', '3个长方形侧面', '有5个面、9条棱'], examples: ['三棱镜', '帐篷的三角形截面', '三角尺的立体化'] },
+    squarePyramid: { name: '四棱锥', define: '底面是正方形，从底面中心向四个顶点连线汇聚到顶点的立体图形', features: ['底面是正方形', '4个三角形侧面', '有5个顶点、8条棱'], examples: ['埃及金字塔', '帐篷尖顶', '建筑物的塔尖'] },
+    frustum: { name: '圆台', define: '圆锥被平行于底面的平面截去顶部后剩余的部分', features: ['上下两个圆面不等', '侧面展开是扇环', '没有顶点'], examples: ['水桶、花盆', '灯罩（梯形）', '某些蛋糕模具'] }
+};
+
+// ==================== 对比列表（功能4） ====================
+let comparisonList = [];
+
+// ==================== 标注数组（功能6） ====================
+let labels = [];
+
+// ==================== Three.js 场景设置 ====================
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xFFF5F5);
+scene.fog = new THREE.Fog(0xFFF5F5, 20, 100);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(15, 15, 15);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+// 阻止 canvas 上的右键菜单，让右键拖拽旋转视角正常工作
+renderer.domElement.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+// 控制器
+const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+orbitControls.enableDamping = true;
+orbitControls.dampingFactor = 0.05;
+orbitControls.mouseButtons = {
+    LEFT: null,
+    MIDDLE: THREE.MOUSE.DOLLY,
+    RIGHT: THREE.MOUSE.ROTATE
+};
+orbitControls.touches = {
+    ONE: null,
+    TWO: THREE.TOUCH.DOLLY_ROTATE
+};
+// 缩放距离限制：防止缩太小看不到内容
+orbitControls.minDistance = 5;
+orbitControls.maxDistance = 80;
+// 限制视角不低于地面
+orbitControls.maxPolarAngle = Math.PI / 2 - 0.05;
+// 保存初始相机参数用于复位
+const defaultCameraPos = new THREE.Vector3(15, 15, 15);
+const defaultCameraTarget = new THREE.Vector3(0, 0, 0);
+
+// 灯光
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10, 20, 10);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+scene.add(dirLight);
+
+const fillLight = new THREE.DirectionalLight(0xFFE4E1, 0.4);
+fillLight.position.set(-10, 10, -10);
+scene.add(fillLight);
+
+// 地面
+const groundGeometry = new THREE.PlaneGeometry(100, 100);
+const groundMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xFFFFFF,
+    roughness: 0.8,
+    metalness: 0.1
+});
+const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.01;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// 网格
+const gridHelper = new THREE.GridHelper(100, 100, 0xFFE0E0, 0xFFF0F0);
+scene.add(gridHelper);
+
+// ==================== 图形管理 ====================
+let shapes = [];
+let selectedShape = null;
+let shapeCounter = 0;
+let wireframeMode = false;
+const dragControls = new THREE.DragControls([], camera, renderer.domElement);
+
+function restoreDragControls() {
+    dragControls.enabled = true;
+}
+
+function handleCanvasPointerDown(e) {
+    if (e.button === 2) {
+        dragControls.enabled = false;
+    }
+}
+
+renderer.domElement.addEventListener('pointerdown', handleCanvasPointerDown, true);
+window.addEventListener('pointerup', restoreDragControls, true);
+window.addEventListener('pointercancel', restoreDragControls, true);
+window.addEventListener('blur', restoreDragControls);
+
+// 颜色池
+const colors = [
+    0xFF6B6B, 0x4ECDC4, 0xFFE66D, 0x95E1D3, 
+    0xF38181, 0xAA96DA, 0xFCBAD3, 0xA8D8EA,
+    0xFFD93D, 0x6BCB77, 0x4D96FF, 0xFF6B9D
+];
+
+function getRandomColor() {
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// 创建材质
+function createMaterial(color) {
+    return new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.3,
+        metalness: 0.1,
+    });
+}
+
+// 创建边框线框
+function createEdges(geometry, color) {
+    const edges = new THREE.EdgesGeometry(geometry);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 });
+    const lineSegments = new THREE.LineSegments(edges, lineMaterial);
+    // 禁用边框的射线检测，避免拖拽时捕获到边框而非 mesh 本体
+    lineSegments.raycast = function() {};
+    return lineSegments;
+}
+
+function disposeMaterial(material) {
+    if (Array.isArray(material)) {
+        material.forEach(disposeMaterial);
+        return;
+    }
+    if (!material) return;
+    Object.keys(material).forEach(key => {
+        const value = material[key];
+        if (value && value.isTexture) {
+            value.dispose();
+        }
+    });
+    material.dispose();
+}
+
+function disposeObject3D(object) {
+    object.traverse(child => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) disposeMaterial(child.material);
+    });
+}
+
+// ==================== 添加图形 ====================
+function addShape(type) {
+    shapeCounter++;
+    const color = getRandomColor();
+    const material = createMaterial(color);
+    let mesh, geometry, edges, shapeData;
+    const x = (Math.random() - 0.5) * 10;
+    const z = (Math.random() - 0.5) * 10;
+
+    switch(type) {
+        case 'square':
+            geometry = new THREE.BoxGeometry(3, 0.1, 3);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.05, z);
+            shapeData = {
+                type: 'square',
+                name: `正方形 #${shapeCounter}`,
+                side: 3,
+                is3D: false,
+                color: color
+            };
+            break;
+
+        case 'rectangle':
+            geometry = new THREE.BoxGeometry(4, 0.1, 2.5);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.05, z);
+            shapeData = {
+                type: 'rectangle',
+                name: `长方形 #${shapeCounter}`,
+                width: 4,
+                height: 2.5,
+                is3D: false,
+                color: color
+            };
+            break;
+
+        case 'circle':
+            geometry = new THREE.CylinderGeometry(1.5, 1.5, 0.1, 64);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.05, z);
+            shapeData = {
+                type: 'circle',
+                name: `圆形 #${shapeCounter}`,
+                radius: 1.5,
+                is3D: false,
+                color: color
+            };
+            break;
+
+        case 'equilateralTriangle':
+            var side = 3;
+            var h = side * Math.sqrt(3) / 2;
+            var triShape = new THREE.Shape();
+            triShape.moveTo(-side/2, -h/2);
+            triShape.lineTo(side/2, -h/2);
+            triShape.lineTo(0, h/2);
+            triShape.lineTo(-side/2, -h/2);
+            geometry = new THREE.ExtrudeGeometry(triShape, { depth: 0.1, bevelEnabled: false });
+            geometry.rotateX(Math.PI / 2);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.1, z);
+            shapeData = {
+                type: 'equilateralTriangle',
+                name: `等边三角形 #${shapeCounter}`,
+                side: side,
+                is3D: false,
+                color: color
+            };
+            break;
+
+        case 'isoscelesTriangle':
+            var base = 3;
+            var height = 2.5;
+            var triShape = new THREE.Shape();
+            triShape.moveTo(-base/2, -height/2);
+            triShape.lineTo(base/2, -height/2);
+            triShape.lineTo(0, height/2);
+            triShape.lineTo(-base/2, -height/2);
+            geometry = new THREE.ExtrudeGeometry(triShape, { depth: 0.1, bevelEnabled: false });
+            geometry.rotateX(Math.PI / 2);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.1, z);
+            shapeData = {
+                type: 'isoscelesTriangle',
+                name: `等腰三角形 #${shapeCounter}`,
+                base: base,
+                height: height,
+                is3D: false,
+                color: color
+            };
+            break;
+
+        case 'parallelogram':
+            var base = 3;
+            var side = 2.5;
+            var angle = 60 * Math.PI / 180;
+            var offset = side * Math.cos(angle);
+            var h = side * Math.sin(angle);
+            var paraShape = new THREE.Shape();
+            paraShape.moveTo(-base/2, -h/2);
+            paraShape.lineTo(base/2, -h/2);
+            paraShape.lineTo(base/2 + offset, h/2);
+            paraShape.lineTo(-base/2 + offset, h/2);
+            paraShape.lineTo(-base/2, -h/2);
+            geometry = new THREE.ExtrudeGeometry(paraShape, { depth: 0.1, bevelEnabled: false });
+            geometry.rotateX(Math.PI / 2);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.1, z);
+            shapeData = {
+                type: 'parallelogram',
+                name: `平行四边形 #${shapeCounter}`,
+                base: base,
+                side: side,
+                angle: 60,
+                is3D: false,
+                color: color
+            };
+            break;
+
+        case 'trapezoid':
+            var bottomBase = 4;
+            var topBase = 2;
+            var height = 2.5;
+            var trapShape = new THREE.Shape();
+            trapShape.moveTo(-bottomBase/2, -height/2);
+            trapShape.lineTo(bottomBase/2, -height/2);
+            trapShape.lineTo(topBase/2, height/2);
+            trapShape.lineTo(-topBase/2, height/2);
+            trapShape.lineTo(-bottomBase/2, -height/2);
+            geometry = new THREE.ExtrudeGeometry(trapShape, { depth: 0.1, bevelEnabled: false });
+            geometry.rotateX(Math.PI / 2);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.1, z);
+            shapeData = {
+                type: 'trapezoid',
+                name: `梯形 #${shapeCounter}`,
+                bottomBase: bottomBase,
+                topBase: topBase,
+                height: height,
+                is3D: false,
+                color: color
+            };
+            break;
+
+        case 'cube':
+            geometry = new THREE.BoxGeometry(3, 3, 3);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 1.5, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'cube',
+                name: `立方体 #${shapeCounter}`,
+                side: 3,
+                is3D: true,
+                color: color
+            };
+            break;
+
+        case 'sphere':
+            geometry = new THREE.SphereGeometry(1.5, 32, 32);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 1.5, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'sphere',
+                name: `球体 #${shapeCounter}`,
+                radius: 1.5,
+                is3D: true,
+                color: color
+            };
+            break;
+
+        case 'cylinder':
+            geometry = new THREE.CylinderGeometry(1.2, 1.2, 3, 32);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 1.5, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'cylinder',
+                name: `圆柱体 #${shapeCounter}`,
+                radius: 1.2,
+                height: 3,
+                is3D: true,
+                color: color
+            };
+            break;
+
+        case 'cone':
+            geometry = new THREE.ConeGeometry(1.5, 3, 32);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 1.5, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'cone',
+                name: `圆锥体 #${shapeCounter}`,
+                radius: 1.5,
+                height: 3,
+                is3D: true,
+                color: color
+            };
+            break;
+
+        case 'cuboid':
+            var cuboidL = 4, cuboidW = 3, cuboidH = 2;
+            geometry = new THREE.BoxGeometry(cuboidL, cuboidH, cuboidW);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, cuboidH / 2, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'cuboid',
+                name: `长方体 #${shapeCounter}`,
+                length: cuboidL,
+                width: cuboidW,
+                height: cuboidH,
+                is3D: true,
+                color: color
+            };
+            break;
+
+        case 'triangularPrism':
+            var tpBase = 3, tpTriH = 2.5, tpDepth = 3;
+            var tpShape = new THREE.Shape();
+            tpShape.moveTo(-tpBase / 2, -tpTriH / 2);
+            tpShape.lineTo(tpBase / 2, -tpTriH / 2);
+            tpShape.lineTo(0, tpTriH / 2);
+            tpShape.lineTo(-tpBase / 2, -tpTriH / 2);
+            geometry = new THREE.ExtrudeGeometry(tpShape, { depth: tpDepth, bevelEnabled: false });
+            geometry.rotateX(Math.PI / 2);
+            geometry.translate(0, tpTriH / 2, -tpDepth / 2);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'triangularPrism',
+                name: `三棱柱 #${shapeCounter}`,
+                base: tpBase,
+                triHeight: tpTriH,
+                depth: tpDepth,
+                is3D: true,
+                color: color
+            };
+            break;
+
+        case 'squarePyramid':
+            var spSide = 3, spHeight = 3;
+            geometry = new THREE.ConeGeometry(spSide * Math.sqrt(2) / 2, spHeight, 4);
+            geometry.rotateY(Math.PI / 4);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, spHeight / 2, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'squarePyramid',
+                name: `四棱锥 #${shapeCounter}`,
+                side: spSide,
+                pyramidHeight: spHeight,
+                is3D: true,
+                color: color
+            };
+            break;
+
+        case 'frustum':
+            var fTopR = 1, fBotR = 2, fHeight = 3;
+            geometry = new THREE.CylinderGeometry(fTopR, fBotR, fHeight, 32);
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, fHeight / 2, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            shapeData = {
+                type: 'frustum',
+                name: `圆台 #${shapeCounter}`,
+                topRadius: fTopR,
+                bottomRadius: fBotR,
+                height: fHeight,
+                is3D: true,
+                color: color
+            };
+            break;
+    }
+
+    edges = createEdges(geometry, 0x333333);
+    mesh.add(edges);
+    mesh.userData = shapeData;
+    mesh.userData.id = shapeCounter;
+
+    scene.add(mesh);
+    shapes.push(mesh);
+    dragControls.getObjects().push(mesh);
+    applyWireframe(mesh);
+
+    selectShape(mesh);
+    updateShapeList();
+}
+
+// ==================== 更新属性面板 ====================
+function updatePropertiesPanel() {
+    if (!selectedShape) return;
+    const data = selectedShape.userData;
+    const panel = document.getElementById('propertiesPanel');
+    const inputs = document.getElementById('propertyInputs');
+
+    panel.style.display = 'block';
+
+    let html = '';
+
+    switch(data.type) {
+        case 'square':
+        case 'cube':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">边长</label>
+                    <input type="number" class="property-input" id="prop-side" value="${data.side}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'rectangle':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">长</label>
+                    <input type="number" class="property-input" id="prop-width" value="${data.width}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">宽</label>
+                    <input type="number" class="property-input" id="prop-height" value="${data.height}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'circle':
+        case 'sphere':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">半径</label>
+                    <input type="number" class="property-input" id="prop-radius" value="${data.radius}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'equilateralTriangle':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">边长</label>
+                    <input type="number" class="property-input" id="prop-side" value="${data.side}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'isoscelesTriangle':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">底边</label>
+                    <input type="number" class="property-input" id="prop-base" value="${data.base}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">高</label>
+                    <input type="number" class="property-input" id="prop-height" value="${data.height}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'parallelogram':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">底边</label>
+                    <input type="number" class="property-input" id="prop-base" value="${data.base}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">侧边</label>
+                    <input type="number" class="property-input" id="prop-side" value="${data.side}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">夹角 (度)</label>
+                    <input type="number" class="property-input" id="prop-angle" value="${data.angle}" step="1" min="1" max="179" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'trapezoid':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">下底</label>
+                    <input type="number" class="property-input" id="prop-bottom" value="${data.bottomBase}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">上底</label>
+                    <input type="number" class="property-input" id="prop-top" value="${data.topBase}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">高</label>
+                    <input type="number" class="property-input" id="prop-height" value="${data.height}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'cylinder':
+        case 'cone':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">底面半径</label>
+                    <input type="number" class="property-input" id="prop-radius" value="${data.radius}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">高</label>
+                    <input type="number" class="property-input" id="prop-height" value="${data.height}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'cuboid':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">长</label>
+                    <input type="number" class="property-input" id="prop-length" value="${data.length}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">宽</label>
+                    <input type="number" class="property-input" id="prop-width" value="${data.width}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">高</label>
+                    <input type="number" class="property-input" id="prop-height" value="${data.height}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'triangularPrism':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">底边</label>
+                    <input type="number" class="property-input" id="prop-base" value="${data.base}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">三角形高</label>
+                    <input type="number" class="property-input" id="prop-triHeight" value="${data.triHeight}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">棱柱长度</label>
+                    <input type="number" class="property-input" id="prop-depth" value="${data.depth}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'squarePyramid':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">底面边长</label>
+                    <input type="number" class="property-input" id="prop-side" value="${data.side}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">锥高</label>
+                    <input type="number" class="property-input" id="prop-pyramidHeight" value="${data.pyramidHeight}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+        case 'frustum':
+            html += `
+                <div class="input-group">
+                    <label class="input-label">上底半径</label>
+                    <input type="number" class="property-input" id="prop-topRadius" value="${data.topRadius}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">下底半径</label>
+                    <input type="number" class="property-input" id="prop-bottomRadius" value="${data.bottomRadius}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">高</label>
+                    <input type="number" class="property-input" id="prop-height" value="${data.height}" step="0.1" min="0.1" onchange="updateShapeSize()">
+                </div>
+            `;
+            break;
+    }
+
+    inputs.innerHTML = html;
+    inputs.querySelectorAll('.input-group').forEach(group => {
+        const label = group.querySelector('.input-label');
+        const input = group.querySelector('.property-input');
+        if (!label || !input) return;
+        label.setAttribute('for', input.id);
+        input.setAttribute('aria-label', label.textContent.trim());
+        input.addEventListener('input', updateShapeSize);
+    });
+}
+
+// ==================== 更新图形大小 ====================
+function updateShapeSize() {
+    if (!selectedShape) return;
+    const data = selectedShape.userData;
+    let newGeometry;
+
+    switch(data.type) {
+        case 'square':
+            var side = parseFloat(document.getElementById('prop-side').value) || 3;
+            data.side = side;
+            newGeometry = new THREE.BoxGeometry(side, 0.1, side);
+            break;
+        case 'rectangle':
+            var w = parseFloat(document.getElementById('prop-width').value) || 4;
+            var h = parseFloat(document.getElementById('prop-height').value) || 2.5;
+            data.width = w;
+            data.height = h;
+            newGeometry = new THREE.BoxGeometry(w, 0.1, h);
+            break;
+        case 'circle':
+            var r = parseFloat(document.getElementById('prop-radius').value) || 1.5;
+            data.radius = r;
+            newGeometry = new THREE.CylinderGeometry(r, r, 0.1, 64);
+            break;
+        case 'equilateralTriangle':
+            var side = parseFloat(document.getElementById('prop-side').value) || 3;
+            data.side = side;
+            var h = side * Math.sqrt(3) / 2;
+            var shape = new THREE.Shape();
+            shape.moveTo(-side/2, -h/2);
+            shape.lineTo(side/2, -h/2);
+            shape.lineTo(0, h/2);
+            shape.lineTo(-side/2, -h/2);
+            newGeometry = new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false });
+            newGeometry.rotateX(Math.PI / 2);
+            break;
+        case 'isoscelesTriangle':
+            var base = parseFloat(document.getElementById('prop-base').value) || 3;
+            var height = parseFloat(document.getElementById('prop-height').value) || 2.5;
+            data.base = base;
+            data.height = height;
+            var shape = new THREE.Shape();
+            shape.moveTo(-base/2, -height/2);
+            shape.lineTo(base/2, -height/2);
+            shape.lineTo(0, height/2);
+            shape.lineTo(-base/2, -height/2);
+            newGeometry = new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false });
+            newGeometry.rotateX(Math.PI / 2);
+            break;
+        case 'parallelogram':
+            var base = parseFloat(document.getElementById('prop-base').value) || 3;
+            var side = parseFloat(document.getElementById('prop-side').value) || 2.5;
+            var angle = (parseFloat(document.getElementById('prop-angle').value) || 60) * Math.PI / 180;
+            data.base = base;
+            data.side = side;
+            data.angle = angle * 180 / Math.PI;
+            var offset = side * Math.cos(angle);
+            var h = side * Math.sin(angle);
+            var shape = new THREE.Shape();
+            shape.moveTo(-base/2, -h/2);
+            shape.lineTo(base/2, -h/2);
+            shape.lineTo(base/2 + offset, h/2);
+            shape.lineTo(-base/2 + offset, h/2);
+            shape.lineTo(-base/2, -h/2);
+            newGeometry = new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false });
+            newGeometry.rotateX(Math.PI / 2);
+            break;
+        case 'trapezoid':
+            var bottomBase = parseFloat(document.getElementById('prop-bottom').value) || 4;
+            var topBase = parseFloat(document.getElementById('prop-top').value) || 2;
+            var height = parseFloat(document.getElementById('prop-height').value) || 2.5;
+            data.bottomBase = bottomBase;
+            data.topBase = topBase;
+            data.height = height;
+            var shape = new THREE.Shape();
+            shape.moveTo(-bottomBase/2, -height/2);
+            shape.lineTo(bottomBase/2, -height/2);
+            shape.lineTo(topBase/2, height/2);
+            shape.lineTo(-topBase/2, height/2);
+            shape.lineTo(-bottomBase/2, -height/2);
+            newGeometry = new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false });
+            newGeometry.rotateX(Math.PI / 2);
+            break;
+        case 'cube':
+            var side = parseFloat(document.getElementById('prop-side').value) || 3;
+            data.side = side;
+            newGeometry = new THREE.BoxGeometry(side, side, side);
+            selectedShape.position.y = side / 2;
+            break;
+        case 'sphere':
+            var r = parseFloat(document.getElementById('prop-radius').value) || 1.5;
+            data.radius = r;
+            newGeometry = new THREE.SphereGeometry(r, 32, 32);
+            selectedShape.position.y = r;
+            break;
+        case 'cylinder':
+            var r = parseFloat(document.getElementById('prop-radius').value) || 1.2;
+            var h = parseFloat(document.getElementById('prop-height').value) || 3;
+            data.radius = r;
+            data.height = h;
+            newGeometry = new THREE.CylinderGeometry(r, r, h, 32);
+            selectedShape.position.y = h / 2;
+            break;
+        case 'cone':
+            var r = parseFloat(document.getElementById('prop-radius').value) || 1.5;
+            var h = parseFloat(document.getElementById('prop-height').value) || 3;
+            data.radius = r;
+            data.height = h;
+            newGeometry = new THREE.ConeGeometry(r, h, 32);
+            selectedShape.position.y = h / 2;
+            break;
+        case 'cuboid':
+            var cubL = parseFloat(document.getElementById('prop-length').value) || 4;
+            var cubW = parseFloat(document.getElementById('prop-width').value) || 3;
+            var cubH = parseFloat(document.getElementById('prop-height').value) || 2;
+            data.length = cubL;
+            data.width = cubW;
+            data.height = cubH;
+            newGeometry = new THREE.BoxGeometry(cubL, cubH, cubW);
+            selectedShape.position.y = cubH / 2;
+            break;
+        case 'triangularPrism':
+            var tpBase = parseFloat(document.getElementById('prop-base').value) || 3;
+            var tpTriH = parseFloat(document.getElementById('prop-triHeight').value) || 2.5;
+            var tpDepth = parseFloat(document.getElementById('prop-depth').value) || 3;
+            data.base = tpBase;
+            data.triHeight = tpTriH;
+            data.depth = tpDepth;
+            var tpShape = new THREE.Shape();
+            tpShape.moveTo(-tpBase / 2, -tpTriH / 2);
+            tpShape.lineTo(tpBase / 2, -tpTriH / 2);
+            tpShape.lineTo(0, tpTriH / 2);
+            tpShape.lineTo(-tpBase / 2, -tpTriH / 2);
+            newGeometry = new THREE.ExtrudeGeometry(tpShape, { depth: tpDepth, bevelEnabled: false });
+            newGeometry.rotateX(Math.PI / 2);
+            newGeometry.translate(0, tpTriH / 2, -tpDepth / 2);
+            break;
+        case 'squarePyramid':
+            var spSide = parseFloat(document.getElementById('prop-side').value) || 3;
+            var spH = parseFloat(document.getElementById('prop-pyramidHeight').value) || 3;
+            data.side = spSide;
+            data.pyramidHeight = spH;
+            newGeometry = new THREE.ConeGeometry(spSide * Math.sqrt(2) / 2, spH, 4);
+            newGeometry.rotateY(Math.PI / 4);
+            selectedShape.position.y = spH / 2;
+            break;
+        case 'frustum':
+            var frTopR = parseFloat(document.getElementById('prop-topRadius').value) || 1;
+            var frBotR = parseFloat(document.getElementById('prop-bottomRadius').value) || 2;
+            var frH = parseFloat(document.getElementById('prop-height').value) || 3;
+            data.topRadius = frTopR;
+            data.bottomRadius = frBotR;
+            data.height = frH;
+            newGeometry = new THREE.CylinderGeometry(frTopR, frBotR, frH, 32);
+            selectedShape.position.y = frH / 2;
+            break;
+    }
+
+    // 更新几何体
+    selectedShape.geometry.dispose();
+    selectedShape.geometry = newGeometry;
+
+    // 更新边框
+    const oldEdges = selectedShape.children.find(c => c instanceof THREE.LineSegments);
+    if (oldEdges) {
+        selectedShape.remove(oldEdges);
+        disposeObject3D(oldEdges);
+    }
+    const newEdges = createEdges(newGeometry, 0xFF6B6B);
+    selectedShape.add(newEdges);
+
+    updateCalcPanel();
+    // 功能6: 更新标注
+    if (selectedShape) {
+        createLabelsForShape(selectedShape);
+    }
+}
+
+function getShapeParams(data) {
+    switch(data.type) {
+        case 'square':
+        case 'cube':
+            return [{ label: '边长', value: data.side }];
+        case 'rectangle':
+            return [{ label: '长', value: data.width }, { label: '宽', value: data.height }];
+        case 'circle':
+        case 'sphere':
+            return [{ label: '半径', value: data.radius }];
+        case 'equilateralTriangle':
+            return [{ label: '边长', value: data.side }];
+        case 'isoscelesTriangle':
+            return [{ label: '底边', value: data.base }, { label: '高', value: data.height }];
+        case 'parallelogram':
+            return [{ label: '底边', value: data.base }, { label: '侧边', value: data.side }, { label: '夹角', value: Math.round(data.angle) + '°' }];
+        case 'trapezoid':
+            return [{ label: '下底', value: data.bottomBase }, { label: '上底', value: data.topBase }, { label: '高', value: data.height }];
+        case 'cylinder':
+        case 'cone':
+            return [{ label: '半径', value: data.radius }, { label: '高', value: data.height }];
+        case 'cuboid':
+            return [{ label: '长', value: data.length }, { label: '宽', value: data.width }, { label: '高', value: data.height }];
+        case 'triangularPrism':
+            return [{ label: '底边', value: data.base }, { label: '三角形高', value: data.triHeight }, { label: '长度', value: data.depth }];
+        case 'squarePyramid':
+            return [{ label: '底面边长', value: data.side }, { label: '锥高', value: data.pyramidHeight }];
+        case 'frustum':
+            return [{ label: '上底半径', value: data.topRadius }, { label: '下底半径', value: data.bottomRadius }, { label: '高', value: data.height }];
+        default:
+            return [];
+    }
+}
+
+function getGeometryComputation(data) {
+    switch(data.type) {
+        case 'square': {
+            const side = data.side;
+            const perimeter = (4 * side).toFixed(2);
+            const area = (side * side).toFixed(2);
+            return {
+                results: [{ label: '周长', value: perimeter }, { label: '面积', value: area }],
+                formulaSteps: ['📐 正方形公式：', '周长 = 4 × 边长', `  = 4 × ${side} = ${perimeter}`, '面积 = 边长 × 边长', `  = ${side} × ${side} = ${area}`]
+            };
+        }
+        case 'rectangle': {
+            const w = data.width;
+            const h = data.height;
+            const perimeter = (2 * (w + h)).toFixed(2);
+            const area = (w * h).toFixed(2);
+            return {
+                results: [{ label: '周长', value: perimeter }, { label: '面积', value: area }],
+                formulaSteps: ['📐 长方形公式：', '周长 = 2 × (长 + 宽)', `  = 2 × (${w} + ${h}) = ${perimeter}`, '面积 = 长 × 宽', `  = ${w} × ${h} = ${area}`]
+            };
+        }
+        case 'circle': {
+            const r = data.radius;
+            const perimeter = (2 * Math.PI * r).toFixed(2);
+            const area = (Math.PI * r * r).toFixed(2);
+            return {
+                results: [{ label: '周长', value: perimeter }, { label: '面积', value: area }],
+                formulaSteps: ['📐 圆形公式：', '周长 = 2πr', `  = 2 × π × ${r} ≈ ${perimeter}`, '面积 = πr²', `  = π × ${r}² ≈ ${area}`]
+            };
+        }
+        case 'equilateralTriangle': {
+            const s = data.side;
+            const perimeter = (3 * s).toFixed(2);
+            const area = (Math.sqrt(3) / 4 * s * s).toFixed(2);
+            return {
+                results: [{ label: '周长', value: perimeter }, { label: '面积', value: area }],
+                formulaSteps: ['📐 等边三角形公式：', '周长 = 3 × 边长', `  = 3 × ${s} = ${perimeter}`, '面积 = (√3/4) × 边长²', `  ≈ 0.433 × ${s}² ≈ ${area}`]
+            };
+        }
+        case 'isoscelesTriangle': {
+            const base = data.base;
+            const height = data.height;
+            const leg = Math.sqrt(Math.pow(base / 2, 2) + Math.pow(height, 2));
+            const perimeter = (base + 2 * leg).toFixed(2);
+            const area = (base * height / 2).toFixed(2);
+            return {
+                results: [{ label: '周长', value: perimeter }, { label: '面积', value: area }],
+                formulaSteps: ['📐 等腰三角形公式：', `腰长 = √((底边/2)² + 高²) = ${leg.toFixed(2)}`, '周长 = 底边 + 2×腰长', `  = ${base} + 2×${leg.toFixed(2)} = ${perimeter}`, `面积 = (底边 × 高) / 2 = ${area}`]
+            };
+        }
+        case 'parallelogram': {
+            const base = data.base;
+            const side = data.side;
+            const angle = data.angle * Math.PI / 180;
+            const h = side * Math.sin(angle);
+            const perimeter = (2 * (base + side)).toFixed(2);
+            const area = (base * h).toFixed(2);
+            return {
+                results: [{ label: '周长', value: perimeter }, { label: '面积', value: area }],
+                formulaSteps: ['📐 平行四边形公式：', `高 = 侧边 × sin(夹角) = ${h.toFixed(2)}`, '周长 = 2 × (底边 + 侧边)', `  = 2 × (${base} + ${side}) = ${perimeter}`, `面积 = 底边 × 高 = ${base} × ${h.toFixed(2)} = ${area}`]
+            };
+        }
+        case 'trapezoid': {
+            const bottomBase = data.bottomBase;
+            const topBase = data.topBase;
+            const height = data.height;
+            const leg = Math.sqrt(Math.pow((bottomBase - topBase) / 2, 2) + Math.pow(height, 2));
+            const perimeter = (bottomBase + topBase + 2 * leg).toFixed(2);
+            const area = ((bottomBase + topBase) * height / 2).toFixed(2);
+            return {
+                results: [{ label: '周长', value: perimeter }, { label: '面积', value: area }],
+                formulaSteps: ['📐 梯形公式：', `腰长 = √(((下底-上底)/2)² + 高²) = ${leg.toFixed(2)}`, '周长 = 下底 + 上底 + 2×腰长', `  = ${bottomBase} + ${topBase} + 2×${leg.toFixed(2)} = ${perimeter}`, `面积 = ((下底 + 上底) × 高) / 2 = ${area}`]
+            };
+        }
+        case 'cube': {
+            const side = data.side;
+            const surfaceArea = (6 * side * side).toFixed(2);
+            const volume = (side * side * side).toFixed(2);
+            return {
+                results: [{ label: '表面积', value: surfaceArea }, { label: '体积', value: volume }],
+                formulaSteps: ['🎲 立方体公式：', '表面积 = 6 × 边长²', `  = 6 × ${side}² = ${surfaceArea}`, '体积 = 边长³', `  = ${side}³ = ${volume}`]
+            };
+        }
+        case 'sphere': {
+            const r = data.radius;
+            const surfaceArea = (4 * Math.PI * r * r).toFixed(2);
+            const volume = ((4 / 3) * Math.PI * r * r * r).toFixed(2);
+            return {
+                results: [{ label: '表面积', value: surfaceArea }, { label: '体积', value: volume }],
+                formulaSteps: ['⚪ 球体公式：', '表面积 = 4πr²', `  = 4 × π × ${r}² ≈ ${surfaceArea}`, '体积 = (4/3)πr³', `  ≈ ${volume}`]
+            };
+        }
+        case 'cylinder': {
+            const r = data.radius;
+            const h = data.height;
+            const surfaceArea = (2 * Math.PI * r * r + 2 * Math.PI * r * h).toFixed(2);
+            const volume = (Math.PI * r * r * h).toFixed(2);
+            return {
+                results: [{ label: '表面积', value: surfaceArea }, { label: '体积', value: volume }],
+                formulaSteps: ['🥫 圆柱体公式：', '表面积 = 2πr² + 2πrh', `  = 2π×${r}² + 2π×${r}×${h} ≈ ${surfaceArea}`, '体积 = πr²h', `  = π×${r}²×${h} ≈ ${volume}`]
+            };
+        }
+        case 'cone': {
+            const r = data.radius;
+            const h = data.height;
+            const slantHeight = Math.sqrt(r * r + h * h);
+            const surfaceArea = (Math.PI * r * r + Math.PI * r * slantHeight).toFixed(2);
+            const volume = ((1 / 3) * Math.PI * r * r * h).toFixed(2);
+            return {
+                results: [{ label: '表面积', value: surfaceArea }, { label: '体积', value: volume }],
+                formulaSteps: ['🔻 圆锥体公式：', `母线长 l = √(r²+h²) = √(${r}²+${h}²) = ${slantHeight.toFixed(2)}`, '表面积 = πr² + πrl', `  = π×${r}² + π×${r}×${slantHeight.toFixed(2)} ≈ ${surfaceArea}`, '体积 = (1/3)πr²h', `  = (1/3)×π×${r}²×${h} ≈ ${volume}`]
+            };
+        }
+        case 'cuboid': {
+            const l = data.length;
+            const w = data.width;
+            const h = data.height;
+            const surfaceArea = (2 * (l * w + l * h + w * h)).toFixed(2);
+            const volume = (l * w * h).toFixed(2);
+            return {
+                results: [{ label: '表面积', value: surfaceArea }, { label: '体积', value: volume }],
+                formulaSteps: ['📦 长方体公式：', '表面积 = 2(长×宽 + 长×高 + 宽×高)', `  = 2(${l}×${w} + ${l}×${h} + ${w}×${h}) = ${surfaceArea}`, '体积 = 长×宽×高', `  = ${l}×${w}×${h} = ${volume}`]
+            };
+        }
+        case 'triangularPrism': {
+            const b = data.base;
+            const th = data.triHeight;
+            const d = data.depth;
+            const triArea = (b * th / 2).toFixed(2);
+            const volume = (b * th / 2 * d).toFixed(2);
+            return {
+                results: [{ label: '底面积', value: triArea }, { label: '体积', value: volume }],
+                formulaSteps: ['🔷 三棱柱公式：', '底面积 = (底边 × 三角形高) / 2', `  = (${b} × ${th}) / 2 = ${triArea}`, '体积 = 底面积 × 棱柱长度', `  = ${triArea} × ${d} = ${volume}`]
+            };
+        }
+        case 'squarePyramid': {
+            const s = data.side;
+            const ph = data.pyramidHeight;
+            const baseArea = (s * s).toFixed(2);
+            const sl = Math.sqrt((s / 2) * (s / 2) + ph * ph);
+            const surfaceArea = (s * s + 2 * s * sl).toFixed(2);
+            const volume = ((1 / 3) * s * s * ph).toFixed(2);
+            return {
+                results: [{ label: '表面积', value: surfaceArea }, { label: '体积', value: volume }],
+                formulaSteps: ['🔶 四棱锥公式：', `底面积 = 边长² = ${s}² = ${baseArea}`, `斜边长 l = √((边/2)²+h²) = ${sl.toFixed(2)}`, `表面积 = 底面积 + 2×边长×斜边长 ≈ ${surfaceArea}`, `体积 = (1/3)×底面积×高 = (1/3)×${baseArea}×${ph} ≈ ${volume}`]
+            };
+        }
+        case 'frustum': {
+            const fr = data.topRadius;
+            const fR = data.bottomRadius;
+            const fh = data.height;
+            const fl = Math.sqrt((fR - fr) * (fR - fr) + fh * fh);
+            const lateralArea = (Math.PI * (fR + fr) * fl).toFixed(2);
+            const surfaceArea = (Math.PI * fr * fr + Math.PI * fR * fR + Math.PI * (fR + fr) * fl).toFixed(2);
+            const volume = ((1 / 3) * Math.PI * fh * (fR * fR + fR * fr + fr * fr)).toFixed(2);
+            return {
+                results: [{ label: '表面积', value: surfaceArea }, { label: '体积', value: volume }],
+                formulaSteps: ['🎗️ 圆台公式：', `母线长 l = √((R-r)²+h²) = ${fl.toFixed(2)}`, '体积 = (1/3)πh(R²+Rr+r²)', `  = (1/3)×π×${fh}×(${fR}²+${fR}×${fr}+${fr}²) ≈ ${volume}`, `侧面积 = π(R+r)l = π×(${fR}+${fr})×${fl.toFixed(2)} ≈ ${lateralArea}`]
+            };
+        }
+        default:
+            return { results: [], formulaSteps: [] };
+    }
+}
+
+function renderResultRows(results) {
+    return results.map(item => `
+        <div class="result-row"><span class="result-label">${item.label}</span><span class="result-value">${item.value}</span></div>
+    `).join('');
+}
+
+// ==================== 更新计算面板 ====================
+function updateCalcPanel() {
+    if (!selectedShape) return;
+    const data = selectedShape.userData;
+    const panel = document.getElementById('calcPanel');
+    const results = document.getElementById('calcResults');
+    const formula = document.getElementById('formulaDisplay');
+    const computation = getGeometryComputation(data);
+
+    panel.style.display = 'block';
+    results.innerHTML = renderResultRows(computation.results);
+    formula.innerHTML = '';
+    formula._steps = computation.formulaSteps;
+
+    if (computation.formulaSteps.length > 0) {
+        formula.innerHTML = '<button type="button" class="formula-toggle" aria-expanded="false">点击展开公式 ▶</button>';
+        const toggle = formula.querySelector('.formula-toggle');
+        toggle.onclick = animateFormula;
+
+        computation.formulaSteps.forEach((step, i) => {
+            const div = document.createElement('div');
+            div.className = 'formula-step';
+            div.textContent = step;
+            div.id = 'fstep-' + i;
+            div.hidden = true;
+            formula.appendChild(div);
+        });
+    }
+}
+
+// 功能5: 公式动画函数
+function animateFormula() {
+    const formula = document.getElementById('formulaDisplay');
+    const steps = formula._steps;
+    if (!steps) return;
+
+    const toggle = formula.querySelector('.formula-toggle');
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.textContent = '公式展开中...';
+    }
+
+    steps.forEach((_, i) => {
+        const el = document.getElementById('fstep-' + i);
+        if (!el) return;
+        el.classList.remove('show');
+        el.hidden = true;
+    });
+
+    steps.forEach((_, i) => {
+        setTimeout(() => {
+            const el = document.getElementById('fstep-' + i);
+            if (!el) return;
+            el.hidden = false;
+            requestAnimationFrame(() => el.classList.add('show'));
+            if (i === steps.length - 1 && toggle) {
+                toggle.textContent = '重新展开公式 ▶';
+            }
+        }, (i + 1) * 450);
+    });
+}
+
+// ==================== 更新图形列表 ====================
+function updateShapeList() {
+    const list = document.getElementById('shapeList');
+    if (shapes.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#999;font-size:13px;padding:20px;">还没有图形，点击上方添加！</div>';
+        return;
+    }
+
+    list.innerHTML = shapes.map(mesh => {
+        const data = mesh.userData;
+        const isActive = selectedShape === mesh;
+        const badgeClass = data.is3D ? 'badge-3d' : 'badge-2d';
+        const badgeText = data.is3D ? '3D' : '2D';
+        const isInCompare = comparisonList.some(c => c.userData.id === data.id);
+        return `
+            <div class="shape-list-item ${isActive ? 'active' : ''}" role="button" tabindex="0" onclick="selectShapeById(${data.id})" onkeydown="handleShapeListKey(event, ${data.id})" aria-label="选择${data.name}">
+                <span>${data.name} <span class="dimension-badge ${badgeClass}">${badgeText}</span></span>
+                <span>
+                    <button type="button" class="compare-btn ${isInCompare ? 'added' : ''}" onclick="event.stopPropagation(); toggleCompare(${data.id})" title="加入对比" aria-label="${isInCompare ? '取消对比' : '加入对比'}${data.name}">${isInCompare ? '✓' : '+'}</button>
+                    <button type="button" class="delete-btn" onclick="event.stopPropagation(); deleteShapeById(${data.id})" aria-label="删除${data.name}">×</button>
+                </span>
+            </div>
+        `;
+    }).join('');
+}
+
+function handleShapeListKey(event, id) {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectShapeById(id);
+    }
+}
+
+function selectShapeById(id) {
+    const mesh = shapes.find(s => s.userData.id === id);
+    if (mesh) selectShape(mesh);
+}
+
+function deleteShapeById(id) {
+    const index = shapes.findIndex(s => s.userData.id === id);
+    if (index === -1) return;
+    const mesh = shapes[index];
+
+    scene.remove(mesh);
+    disposeObject3D(mesh);
+    shapes.splice(index, 1);
+
+    const dragIndex = dragControls.getObjects().indexOf(mesh);
+    if (dragIndex > -1) dragControls.getObjects().splice(dragIndex, 1);
+
+    // 从对比列表中移除
+    const compIdx = comparisonList.findIndex(c => c.userData.id === id);
+    if (compIdx > -1) comparisonList.splice(compIdx, 1);
+
+    if (selectedShape === mesh) {
+        selectedShape = null;
+        selectionGlow = null;
+        document.getElementById('propertiesPanel').style.display = 'none';
+        document.getElementById('calcPanel').style.display = 'none';
+        document.getElementById('knowledgePanel').style.display = 'none';
+        removeLabels();
+    }
+
+    updateShapeList();
+    updateComparePanel();
+}
+
+function deleteSelected() {
+    if (!selectedShape) {
+        alert('请先选择一个图形！');
+        return;
+    }
+    deleteShapeById(selectedShape.userData.id);
+}
+
+function clearAll() {
+    if (shapes.length === 0) return;
+    if (!confirm('确定要清空所有图形吗？')) return;
+
+    shapes.forEach(mesh => {
+        scene.remove(mesh);
+        disposeObject3D(mesh);
+    });
+    shapes = [];
+    dragControls.getObjects().length = 0;
+    selectedShape = null;
+    selectionGlow = null;
+    comparisonList = [];
+    document.getElementById('propertiesPanel').style.display = 'none';
+    document.getElementById('calcPanel').style.display = 'none';
+    document.getElementById('knowledgePanel').style.display = 'none';
+    document.getElementById('compareSection').style.display = 'none';
+    removeLabels();
+    updateShapeList();
+}
+
+// ==================== 骨架透视模式 ====================
+function toggleWireframe() {
+    wireframeMode = !wireframeMode;
+    const btn = document.getElementById('wireframeToggle');
+    btn.classList.toggle('active', wireframeMode);
+
+    shapes.forEach(mesh => {
+        if (wireframeMode) {
+            mesh.material.opacity = 0;
+            mesh.material.transparent = true;
+            mesh.material.needsUpdate = true;
+            const edges = mesh.children.find(c => c instanceof THREE.LineSegments);
+            if (edges) {
+                edges.material.color.setHex(selectedShape === mesh ? 0xFF6B6B : 0x333333);
+                edges.material.linewidth = 2;
+                edges.material.opacity = 1;
+                edges.material.transparent = true;
+            }
+        } else {
+            mesh.material.opacity = 1;
+            mesh.material.transparent = false;
+            mesh.material.needsUpdate = true;
+            const edges = mesh.children.find(c => c instanceof THREE.LineSegments);
+            if (edges) {
+                edges.material.color.setHex(selectedShape === mesh ? 0xFF6B6B : 0x333333);
+            }
+        }
+    });
+}
+
+function applyWireframe(mesh) {
+    if (!wireframeMode) return;
+    mesh.material.opacity = 0;
+    mesh.material.transparent = true;
+    mesh.material.needsUpdate = true;
+    const edges = mesh.children.find(c => c instanceof THREE.LineSegments);
+    if (edges) {
+        edges.material.opacity = 1;
+        edges.material.transparent = true;
+    }
+}
+
+// ==================== 选中视觉增强 ====================
+let selectionGlow = null;
+
+function selectShape(mesh) {
+    // 取消之前的选择
+    if (selectedShape) {
+        const oldEdges = selectedShape.children.find(c => c instanceof THREE.LineSegments);
+        if (oldEdges) {
+            oldEdges.material.color.setHex(0x333333);
+            oldEdges.material.linewidth = 2;
+        }
+        // 移除发光层
+        if (selectionGlow && selectionGlow.parent === selectedShape) {
+            selectedShape.remove(selectionGlow);
+            disposeObject3D(selectionGlow);
+            selectionGlow = null;
+        }
+        // 功能6: 移除标注
+        removeLabels();
+    }
+
+    selectedShape = mesh;
+
+    if (mesh) {
+        const edges = mesh.children.find(c => c instanceof THREE.LineSegments);
+        if (edges) {
+            edges.material.color.setHex(0xFF6B6B);
+            edges.material.linewidth = 3;
+        }
+        // 添加发光外壳
+        const glowGeom = mesh.geometry.clone();
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: 0xFF6B6B,
+            transparent: true,
+            opacity: 0.12,
+            side: THREE.BackSide
+        });
+        selectionGlow = new THREE.Mesh(glowGeom, glowMat);
+        selectionGlow.scale.multiplyScalar(1.08);
+        selectionGlow.raycast = function() {};
+        mesh.add(selectionGlow);
+
+        updatePropertiesPanel();
+        updateCalcPanel();
+        updateKnowledgePanel();
+        // 功能6: 创建标注
+        createLabelsForShape(mesh);
+    } else {
+        document.getElementById('propertiesPanel').style.display = 'none';
+        document.getElementById('calcPanel').style.display = 'none';
+        document.getElementById('knowledgePanel').style.display = 'none';
+        removeLabels();
+    }
+
+    updateShapeList();
+    updateComparePanel();
+}
+
+// 选中脉冲动画（在动画循环中调用）
+let pulseTime = 0;
+function updateSelectionGlow() {
+    if (selectionGlow && selectedShape) {
+        pulseTime += 0.03;
+        selectionGlow.material.opacity = 0.08 + 0.06 * Math.sin(pulseTime * 2);
+    }
+}
+
+// ==================== 拖拽控制 ====================
+dragControls.addEventListener('dragstart', function(event) {
+    orbitControls.enabled = false;
+    selectShape(event.object);
+});
+
+dragControls.addEventListener('dragend', function(event) {
+    orbitControls.enabled = true;
+});
+
+// ==================== 动画循环 ====================
+function animate() {
+    requestAnimationFrame(animate);
+    orbitControls.update();
+    updateSelectionGlow();
+    renderer.render(scene, camera);
+}
+animate();
+
+// ==================== 窗口调整 ====================
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    syncSidebarAccessibility();
+});
+
+// iPad Safari: orientationchange 时额外处理
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        syncSidebarAccessibility();
+    }, 300);
+});
+
+// ==================== 侧边栏切换 ====================
+function isMobileSidebarMode() {
+    return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function syncSidebarAccessibility() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const isOpen = sidebar.classList.contains('open');
+    const hideSidebar = isMobileSidebarMode() && !isOpen;
+
+    sidebar.setAttribute('aria-hidden', hideSidebar ? 'true' : 'false');
+    if (hideSidebar) {
+        sidebar.setAttribute('inert', '');
+    } else {
+        sidebar.removeAttribute('inert');
+    }
+
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    toggle.setAttribute('aria-label', isOpen ? '关闭图形面板' : '打开图形面板');
+    backdrop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+}
+
+function setSidebarOpen(isOpen) {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    sidebar.classList.toggle('open', isOpen);
+    toggle.classList.toggle('active', isOpen);
+    toggle.classList.toggle('shifted', isOpen);
+    backdrop.classList.toggle('show', isOpen);
+    toggle.textContent = isOpen ? '✕' : '☰';
+    syncSidebarAccessibility();
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    setSidebarOpen(!sidebar.classList.contains('open'));
+}
+
+function closeSidebar() {
+    setSidebarOpen(false);
+}
+
+syncSidebarAccessibility();
+
+// ==================== 一键复位 ====================
+function resetCamera() {
+    // 平滑过渡到初始视角
+    const startPos = camera.position.clone();
+    const startTarget = orbitControls.target.clone();
+    const duration = 600;
+    const startTime = Date.now();
+
+    function animateReset() {
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        // easeOutCubic 缓动
+        const ease = 1 - Math.pow(1 - t, 3);
+
+        camera.position.lerpVectors(startPos, defaultCameraPos, ease);
+        orbitControls.target.lerpVectors(startTarget, defaultCameraTarget, ease);
+        orbitControls.update();
+
+        if (t < 1) {
+            requestAnimationFrame(animateReset);
+        }
+    }
+    animateReset();
+}
+
+// ==================== 触摸设备检测 ====================
+(function() {
+    var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (isTouchDevice) {
+        document.getElementById('hintMouse1').style.display = 'none';
+        document.getElementById('hintMouse2').style.display = 'none';
+        document.getElementById('hintMouse3').style.display = 'none';
+        document.getElementById('hintTouch1').style.display = 'flex';
+        document.getElementById('hintTouch2').style.display = 'flex';
+    }
+})();
+
+// ==================== iPad Safari 兼容性处理 ====================
+(function() {
+    // 1. 禁用双击缩放（iOS Safari）
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+        var now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    // 2. 防止页面橡皮筋效果（iOS overscroll）
+    document.body.addEventListener('touchmove', function(e) {
+        // 允许侧边栏、模态框、遮罩上的触摸事件正常传递
+        if (e.target.closest('.scroll-area') || e.target.closest('.modal-box') ||
+            e.target.closest('.sidebar-backdrop') || e.target.closest('.sidebar') ||
+            e.target.closest('.sidebar-toggle') || e.target.closest('.modal-overlay')) {
+            return;
+        }
+        e.preventDefault();
+    }, { passive: false });
+
+    // 3. 防止双指缩放页面
+    document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+    document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+    document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+})();
+
+// ==================== 功能1: 知识卡片 ====================
+function updateKnowledgePanel() {
+    if (!selectedShape) return;
+    const data = selectedShape.userData;
+    const panel = document.getElementById('knowledgePanel');
+    const content = document.getElementById('knowledgeContent');
+    const info = knowledgeDB[data.type];
+
+    if (!info) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    panel.style.display = 'block';
+    content.innerHTML = `
+        <div class="knowledge-card">
+            <div class="k-title">${info.name}</div>
+            <div class="k-define">${info.define}</div>
+            <div class="k-section">关键特征</div>
+            ${info.features.map(f => '<div class="k-item">- ' + f + '</div>').join('')}
+            <div class="k-section">生活实例</div>
+            ${info.examples.map(e => '<div class="k-item">- ' + e + '</div>').join('')}
+        </div>
+    `;
+}
+
+// ==================== 功能2: 互动练习模式 ====================
+let currentQuestion = null;
+let lastFocusedElement = null;
+
+function openPracticeModal() {
+    lastFocusedElement = document.activeElement;
+    const modal = document.getElementById('practiceModal');
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    nextPracticeQuestion();
+    setTimeout(() => document.getElementById('practiceAnswer').focus(), 0);
+}
+
+function closePracticeModal() {
+    const modal = document.getElementById('practiceModal');
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    document.getElementById('practiceAnswer').value = '';
+    document.getElementById('practiceResult').innerHTML = '';
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        lastFocusedElement.focus();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('practiceModal').classList.contains('show')) {
+        closePracticeModal();
+    }
+});
+
+function generateQuestion() {
+    const shapeTypes = [
+        { type: 'square', name: '正方形', params: ['side'], paramNames: ['边长'] },
+        { type: 'rectangle', name: '长方形', params: ['width', 'height'], paramNames: ['长', '宽'] },
+        { type: 'circle', name: '圆形', params: ['radius'], paramNames: ['半径'] },
+        { type: 'equilateralTriangle', name: '等边三角形', params: ['side'], paramNames: ['边长'] },
+        { type: 'cube', name: '立方体', params: ['side'], paramNames: ['边长'] },
+        { type: 'sphere', name: '球体', params: ['radius'], paramNames: ['半径'] },
+        { type: 'cylinder', name: '圆柱体', params: ['radius', 'height'], paramNames: ['底面半径', '高'] },
+        { type: 'cone', name: '圆锥体', params: ['radius', 'height'], paramNames: ['底面半径', '高'] }
+    ];
+
+    const shape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+
+    // 生成随机参数（1-10之间，保留1位小数）
+    const values = shape.params.map(() => parseFloat((Math.random() * 9 + 1).toFixed(1)));
+
+    // 构建参数描述
+    const paramDesc = shape.paramNames.map((name, i) => `${name}为 ${values[i]}`).join('，');
+
+    const data = { type: shape.type };
+    shape.params.forEach((param, i) => {
+        data[param] = values[i];
+    });
+    const computation = getGeometryComputation(data);
+    const result = computation.results[Math.floor(Math.random() * computation.results.length)];
+
+    return {
+        text: `请创建一个【${shape.name}】，设置${paramDesc}，它的${result.label}是多少？（保留两位小数）`,
+        answer: parseFloat(result.value)
+    };
+}
+
+function nextPracticeQuestion() {
+    currentQuestion = generateQuestion();
+    document.getElementById('practiceQuestion').textContent = currentQuestion.text;
+    document.getElementById('practiceAnswer').value = '';
+    document.getElementById('practiceResult').innerHTML = '';
+}
+
+function submitPracticeAnswer() {
+    if (!currentQuestion) return;
+    const userAnswer = parseFloat(document.getElementById('practiceAnswer').value);
+    const resultDiv = document.getElementById('practiceResult');
+
+    if (isNaN(userAnswer)) {
+        resultDiv.innerHTML = '<div class="modal-result wrong">请输入一个数字！</div>';
+        return;
+    }
+
+    // 允许0.1的误差
+    const diff = Math.abs(userAnswer - currentQuestion.answer);
+    if (diff < 0.1) {
+        resultDiv.innerHTML = '<div class="modal-result correct">太棒了！回答正确！</div>';
+    } else {
+        resultDiv.innerHTML = `<div class="modal-result wrong">答错了，正确答案是 ${currentQuestion.answer}。再想想哦！</div>`;
+    }
+}
+
+// ==================== 功能4: 图形对比 ====================
+function toggleCompare(id) {
+    const mesh = shapes.find(s => s.userData.id === id);
+    if (!mesh) return;
+
+    const idx = comparisonList.findIndex(c => c.userData.id === id);
+    if (idx > -1) {
+        comparisonList.splice(idx, 1);
+    } else {
+        if (comparisonList.length >= 2) {
+            // 替换最早的
+            comparisonList.shift();
+        }
+        comparisonList.push(mesh);
+    }
+
+    updateShapeList();
+    updateComparePanel();
+}
+
+function clearComparison() {
+    comparisonList = [];
+    updateShapeList();
+    updateComparePanel();
+}
+
+function getShapeCalcData(mesh) {
+    const d = mesh.userData;
+    const computation = getGeometryComputation(d);
+    return {
+        name: d.name,
+        params: getShapeParams(d),
+        results: computation.results
+    };
+}
+
+function updateComparePanel() {
+    const section = document.getElementById('compareSection');
+    const panel = document.getElementById('comparePanel');
+
+    if (comparisonList.length < 2) {
+        if (comparisonList.length === 0) {
+            section.style.display = 'none';
+        } else {
+            section.style.display = 'block';
+            panel.innerHTML = '<div style="font-size:12px;color:#999;text-align:center;padding:10px;">已选1个图形，再选1个即可对比</div>';
+        }
+        return;
+    }
+
+    section.style.display = 'block';
+    const a = getShapeCalcData(comparisonList[0]);
+    const b = getShapeCalcData(comparisonList[1]);
+
+    let html = `<div class="compare-panel">
+        <div class="compare-title">⚖️ 图形对比</div>
+        <div class="compare-item a">
+            <div class="ci-name">${a.name}</div>
+            ${a.params.map(p => '<div class="ci-row"><span>' + p.label + '</span><span>' + p.value + '</span></div>').join('')}
+            ${a.results.map(r => '<div class="ci-row"><span>' + r.label + '</span><span>' + r.value + '</span></div>').join('')}
+        </div>
+        <div class="compare-item b">
+            <div class="ci-name">${b.name}</div>
+            ${b.params.map(p => '<div class="ci-row"><span>' + p.label + '</span><span>' + p.value + '</span></div>').join('')}
+            ${b.results.map(r => '<div class="ci-row"><span>' + r.label + '</span><span>' + r.value + '</span></div>').join('')}
+        </div>
+    </div>`;
+
+    panel.innerHTML = html;
+}
+
+// ==================== 功能6: 尺寸标注 ====================
+function createLabel(text, position) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(255,107,107,0.9)';
+    // 兼容旧浏览器的 roundRect
+    if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(4, 4, 248, 56, 12);
+        ctx.fill();
+    } else {
+        ctx.fillRect(4, 4, 248, 56);
+    }
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(material);
+    sprite.position.copy(position);
+    sprite.scale.set(2, 0.5, 1);
+    sprite.raycast = function() {};
+    return sprite;
+}
+
+function removeLabels() {
+    labels.forEach(label => {
+        scene.remove(label);
+        disposeObject3D(label);
+    });
+    labels = [];
+}
+
+function createLabelsForShape(mesh) {
+    removeLabels();
+    const data = mesh.userData;
+    const pos = mesh.position;
+
+    // 辅助函数：获取图形在世界坐标中的顶部Y值（用于平面图形标注高度）
+    function getTopY() {
+        if (data.is3D) {
+            // 立体图形：用bounding box获取准确的顶部
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            return worldBox.max.y;
+        } else {
+            // 平面图形：ExtrudeGeometry rotateX(PI/2)后 y范围是[pos.y-0.1, pos.y]或[pos.y, pos.y+0.1]
+            // 统一取 pos.y + 0.12 作为标注高度
+            return pos.y + 0.12;
+        }
+    }
+
+    switch(data.type) {
+        case 'square': {
+            const s = data.side;
+            const topY = getTopY();
+            // 只标两条相邻边，避免重复
+            labels.push(createLabel('边长=' + s, new THREE.Vector3(pos.x + s/2 + 0.3, topY, pos.z)));
+            labels.push(createLabel('边长=' + s, new THREE.Vector3(pos.x, topY, pos.z + s/2 + 0.3)));
+            break;
+        }
+        case 'rectangle': {
+            const w = data.width, h = data.height;
+            const topY = getTopY();
+            labels.push(createLabel('长=' + w, new THREE.Vector3(pos.x + w/2 + 0.3, topY, pos.z)));
+            labels.push(createLabel('宽=' + h, new THREE.Vector3(pos.x, topY, pos.z + h/2 + 0.3)));
+            break;
+        }
+        case 'circle': {
+            const r = data.radius;
+            const topY = getTopY();
+            labels.push(createLabel('r=' + r, new THREE.Vector3(pos.x + r + 0.3, topY, pos.z)));
+            break;
+        }
+        case 'equilateralTriangle': {
+            const s = data.side;
+            const topY = getTopY();
+            labels.push(createLabel('边长=' + s, new THREE.Vector3(pos.x + s/2 + 0.3, topY, pos.z)));
+            break;
+        }
+        case 'isoscelesTriangle': {
+            const b = data.base, h = data.height;
+            const topY = getTopY();
+            labels.push(createLabel('底=' + b, new THREE.Vector3(pos.x + b/2 + 0.3, topY, pos.z)));
+            // 高标注放在图形上方中心，避免飞出几何体范围
+            labels.push(createLabel('高=' + h, new THREE.Vector3(pos.x, topY + 0.15, pos.z)));
+            break;
+        }
+        case 'parallelogram': {
+            const b = data.base, s = data.side, ang = Math.round(data.angle);
+            const topY = getTopY();
+            labels.push(createLabel('底=' + b, new THREE.Vector3(pos.x + b/2 + 0.3, topY, pos.z)));
+            labels.push(createLabel('侧=' + s, new THREE.Vector3(pos.x - b/2 - 0.5, topY, pos.z + 0.5)));
+            labels.push(createLabel('角=' + ang + '°', new THREE.Vector3(pos.x + b/2 + 0.3, topY + 0.15, pos.z + 0.5)));
+            break;
+        }
+        case 'trapezoid': {
+            const bb = data.bottomBase, tb = data.topBase, h = data.height;
+            const topY = getTopY();
+            // 梯形在Shape坐标系中：下底在z=-h/2，上底在z=+h/2
+            // rotateX(PI/2)后Shape的y变成世界的z
+            labels.push(createLabel('下底=' + bb, new THREE.Vector3(pos.x, topY, pos.z - h/2)));
+            labels.push(createLabel('上底=' + tb, new THREE.Vector3(pos.x, topY, pos.z + h/2)));
+            break;
+        }
+        case 'cube': {
+            const s = data.side;
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            labels.push(createLabel('边长=' + s, new THREE.Vector3(worldBox.max.x + 0.3, pos.y, pos.z)));
+            break;
+        }
+        case 'sphere': {
+            const r = data.radius;
+            labels.push(createLabel('r=' + r, new THREE.Vector3(pos.x + r + 0.3, pos.y, pos.z)));
+            break;
+        }
+        case 'cylinder': {
+            const r = data.radius, h = data.height;
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            // r标注在底部外侧
+            labels.push(createLabel('r=' + r, new THREE.Vector3(worldBox.max.x + 0.3, worldBox.min.y + 0.1, pos.z)));
+            // h标注在侧面，z方向偏移避免与r重叠
+            labels.push(createLabel('h=' + h, new THREE.Vector3(worldBox.max.x + 0.3, pos.y, pos.z + 0.5)));
+            break;
+        }
+        case 'cone': {
+            const r = data.radius, h = data.height;
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            // r标注在底面外侧
+            labels.push(createLabel('r=' + r, new THREE.Vector3(worldBox.max.x + 0.3, worldBox.min.y + 0.1, pos.z)));
+            // h标注在顶点上方
+            labels.push(createLabel('h=' + h, new THREE.Vector3(pos.x, worldBox.max.y + 0.3, pos.z)));
+            break;
+        }
+        case 'cuboid': {
+            const l = data.length, w = data.width, h = data.height;
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            const min = worldBox.min, max = worldBox.max;
+            // 三个标注分散在三个不同位置，避免重叠
+            // 长标注：底面右侧边缘
+            labels.push(createLabel('长=' + l, new THREE.Vector3(max.x + 0.3, min.y + 0.15, pos.z)));
+            // 宽标注：底面前侧边缘（与长错开高度）
+            labels.push(createLabel('宽=' + w, new THREE.Vector3(pos.x, min.y + 0.15, max.z + 0.3)));
+            // 高标注：右侧面顶部（与前两个完全错开）
+            labels.push(createLabel('高=' + h, new THREE.Vector3(max.x + 0.3, max.y + 0.3, max.z + 0.3)));
+            break;
+        }
+        case 'triangularPrism': {
+            const b = data.base, th = data.triHeight, d = data.depth;
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            const min = worldBox.min, max = worldBox.max;
+            // 底边标注：放在顶面(y=max.y)上方，底边所在z位置(min.z)
+            labels.push(createLabel('底=' + b, new THREE.Vector3(pos.x + b/2 + 0.3, max.y + 0.3, min.z + 0.3)));
+            // 三角形高：放在顶面，靠近顶点(z=max.z)
+            labels.push(createLabel('高=' + th, new THREE.Vector3(pos.x + 0.3, max.y + 0.3, max.z + 0.3)));
+            // 棱柱长度：放在侧面中间高度
+            labels.push(createLabel('长=' + d, new THREE.Vector3(pos.x, pos.y, min.z - 0.3)));
+            break;
+        }
+        case 'squarePyramid': {
+            const s = data.side, ph = data.pyramidHeight;
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            // 边长标注放在底面外侧
+            labels.push(createLabel('边=' + s, new THREE.Vector3(worldBox.max.x + 0.3, worldBox.min.y + 0.3, pos.z)));
+            // 高标注在顶点上方
+            labels.push(createLabel('h=' + ph, new THREE.Vector3(pos.x, worldBox.max.y + 0.3, pos.z)));
+            break;
+        }
+        case 'frustum': {
+            const tr = data.topRadius, br = data.bottomRadius, fh = data.height;
+            const worldBox = new THREE.Box3().setFromObject(mesh);
+            // 下底半径标注在底部外侧
+            labels.push(createLabel('R=' + br, new THREE.Vector3(worldBox.max.x + 0.3, worldBox.min.y + 0.1, pos.z)));
+            // 上底半径标注在顶部外侧
+            labels.push(createLabel('r=' + tr, new THREE.Vector3(pos.x + tr + 0.3, worldBox.max.y - 0.1, pos.z)));
+            // 高标注在侧面，z方向偏移避免重叠
+            labels.push(createLabel('h=' + fh, new THREE.Vector3(worldBox.max.x + 0.3, pos.y, pos.z + 0.5)));
+            break;
+        }
+    }
+
+    labels.forEach(label => scene.add(label));
+}
+</script>
+
+</body>
+</html>
