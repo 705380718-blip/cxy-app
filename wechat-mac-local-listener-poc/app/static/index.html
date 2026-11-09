@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f7f8f7" />
+    <title>交付小助手</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/app.js" defer></script>
+    <script src="/static/delivery.js" defer></script>
+    <script src="/static/workbench.js" defer></script>
+    <script src="/static/followup-reports.js" defer></script>
+    <script src="/static/workflow.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#">
+        <span class="brand-mark">W</span>
+        <span><strong>交付小助手</strong><small id="platform-subtitle">LOCAL LISTENER</small></span>
+      </a>
+      <div class="topbar-actions"><span id="flow-context" class="flow-context">先设置要整理的群消息</span><button id="model-settings-open" class="button settings-trigger" type="button" aria-haspopup="dialog" aria-controls="model-settings-dialog"><svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 3-.6 2.3-2 1.2L4.1 6l-3 5.2 1.7 1.6v2.4l-1.7 1.6 3 5.2 2.3-.5 2 1.2L9 25h6l.6-2.3 2-1.2 2.3.5 3-5.2-1.7-1.6v-2.4l1.7-1.6-3-5.2-2.3.5-2-1.2L15 3Z" transform="translate(2 0) scale(.8)"/><circle cx="12" cy="11.2" r="3.2"/></svg> 设置 <span id="flow-model-state" class="settings-state">检查中</span></button></div>
+    </header>
+
+    <nav class="tabs workflow-nav" aria-label="操作流程">
+      <button class="tab flow-step active" data-tab="setup" data-step="1" type="button"><span class="step-number">1</span><span>微信与群聊<small>选择消息来源</small></span></button>
+      <button class="tab flow-step" data-tab="rules" data-step="2" type="button"><span class="step-number">2</span><span>采集规则<small>确定关注内容</small></span></button>
+      <button class="tab flow-step" data-tab="collect" data-step="3" type="button"><span class="step-number">3</span><span>开始采集<small>查看收到的消息</small></span></button>
+      <button class="tab flow-step" data-tab="workbench" data-step="4" type="button"><span class="step-number">4</span><span>AI 分析<small>整理有用信息</small></span></button>
+      <button class="tab flow-step" data-tab="results" data-step="5" type="button"><span class="step-number">5</span><span>信息与报告<small>查看结果并导出</small></span></button>
+    </nav>
+    <div class="workflow-utility"><span id="flow-progress">第 1 步 / 共 5 步</span><div><button id="refresh-button" class="button ghost" type="button">刷新</button></div></div>
+
+    <main>
+      <div class="flow-heading"><div><h1 id="flow-title">配置微信与群聊</h1><p id="flow-description">设置群名称和你的昵称，消息会按用途归到同一个整理空间。</p></div><span id="flow-readiness" class="flow-readiness">等待配置</span></div>
+      <section id="tab-setup" class="tab-panel active">
+        <form id="flow-setup-form" class="card flow-setup-form">
+          <div class="flow-account"><span class="flow-account-icon" aria-hidden="true">W</span><div><strong>使用本机登录的微信</strong><p id="flow-account-value">正在检查微信状态…</p><small>请先在微信客户端登录；这里不保存微信密码。</small></div></div>
+          <div class="flow-fields"><label>整理空间<select id="flow-project"><option value="">新建整理空间</option></select></label><label id="flow-name-label">空间名称<input id="flow-project-name" class="text-input" maxlength="100" placeholder="例如：项目交付跟进" /></label>
+          <label>消息来源<select id="flow-source-kind"><option value="decoder">本机微信采集</option><option value="import">手动导入群消息</option></select></label><label>我的微信昵称<textarea id="flow-self-names" rows="2" required placeholder="用于识别 @我的消息，每行一个昵称"></textarea></label></div>
+          <label class="flow-groups-label">需要采集的群名称<textarea id="flow-groups" rows="4" required placeholder="填写完整群名称，每行一个"></textarea><small>按完整名称匹配，只处理名单内的群。</small></label>
+          <p id="flow-setup-status" role="status" class="muted"></p><div class="flow-actions"><button id="flow-save-setup" class="button primary" type="submit">保存，设置采集规则 →</button></div>
+        </form>
+      </section>
+      <section id="tab-workbench" class="tab-panel">
+        <div id="flow-ai-guidance" class="flow-guidance" role="status"></div>
+
+
+        <div class="work-toolbar analysis-toolbar">
+          <div><h2>分析工作台</h2><p class="muted">自动整理新消息，直接查看结果；需要时再核对原文。</p></div>
+          <label>项目<select id="work-project" aria-label="工作台项目"></select></label>
+          <button id="work-refresh" class="button" type="button">刷新分析结果</button>
+        </div>
+        <div class="delivery-grid work-layout">
+          <section class="card delivery-form analysis-scope">
+            <div class="card-title"><h2>自动分析</h2><span id="work-ai-state" class="badge">读取配置中</span></div>
+            <p id="automatic-analysis-state" class="coverage-note" role="status"></p>
+            <button class="button primary" data-goto="results" type="button">查看整理结果 →</button>
+            <details id="analysis-manual-controls" open><summary>手动分析历史消息（可选）</summary>
+            <form id="analysis-form" class="delivery-form">
+              <label>消息来源<select id="work-source" required></select></label>
+              <details class="flow-advanced"><summary>限定消息范围（可选）</summary><div class="delivery-inline"><label>起始消息 ID（不含）<input id="analysis-after" class="text-input" type="number" value="0" min="0" required /></label><label>截止消息 ID（含，可留空）<input id="analysis-through" class="text-input" type="number" min="1" /></label></div>
+              </details><button class="button primary" type="submit">预览并分析消息</button>
+            </form>
+            <div id="analysis-preview" hidden>
+              <p id="analysis-coverage" class="muted"></p>
+              <button id="analysis-preview-open" class="button preview-link" type="button">查看待发送文本</button>
+              <p class="muted">本批正文、引用和事项上下文将发送至 DeepSeek。请先打开预览核对，确认后再发送。</p>
+              <label class="consent-line"><input id="analysis-consent" type="checkbox" /> 我确认发送本批文本</label>
+              <button id="analysis-send" class="button primary" type="button">确认发送，开始 AI 分析</button>
+              <button id="analysis-next" class="button" type="button" hidden>预览下一批</button>
+            </div>
+            </details>
+            <details><summary>单独设置来源自动分析</summary><p class="muted">启用后，仅从当前最后一条消息之后开始，按来源发送脱敏正文。已有历史消息需在上方预览确认。</p><label class="consent-line"><input id="automation-consent" type="checkbox" /> 同意后续消息持续发送至 DeepSeek</label><div class="delivery-inline"><button id="automation-enable" class="button" type="button">启用后续分析</button><button id="automation-disable" class="button" type="button">停止后续分析</button></div><p id="automation-state" role="status"></p></details>
+            <details><summary>手动记录事项</summary><form id="manual-item-form" class="delivery-form"><p class="muted">可从范围预览中核对消息 ID，手动建立待复核事项。</p><label>类型<select id="manual-type"><option value="task">任务</option><option value="issue">问题</option><option value="decision">决策</option><option value="risk">风险</option></select></label><label>标题<input id="manual-title" class="text-input" required maxlength="200" /></label><label>依据消息 ID（逗号分隔）<input id="manual-evidence" class="text-input" required placeholder="1,2,3" /></label><button class="button" type="submit">保存待复核事项</button></form></details>
+          </section>
+          <section class="card proposal-workspace">
+            <div class="card-title"><h2>待复核建议</h2><span id="proposal-count" class="badge">0</span></div>
+            <div class="proposal-filter"><label for="proposal-type">建议类型</label><select id="proposal-type"><option value="">全部类型</option><option value="task">任务</option><option value="issue">问题</option><option value="decision">决策</option><option value="risk">风险</option></select><span class="muted">打开建议，核对详情与原文</span></div>
+            <div class="proposal-batch-toolbar" role="group" aria-label="批量处理建议">
+              <label class="proposal-select-page"><input id="proposal-select-page" type="checkbox">全选当前页</label>
+              <span id="proposal-selected-count" class="muted" aria-live="polite">已选 0 条</span>
+              <button id="proposal-clear" class="button" type="button" disabled>清空选择</button>
+              <div class="proposal-batch-actions"><button id="proposal-batch-dismiss" class="button" type="button" disabled>批量忽略</button><button id="proposal-batch-apply" class="button primary" type="button" disabled>批量采纳</button></div>
+            </div>
+            <div id="proposal-list" class="proposal-list" aria-live="polite"></div>
+            <div class="list-pagination"><span id="proposal-page-info" class="muted"></span><div><button id="proposal-prev" class="button small" type="button">上一页</button><button id="proposal-next" class="button small" type="button">下一页</button></div></div>
+            <div class="queue-entry"><span id="job-count" class="muted"></span><button id="job-open" class="button" type="button">查看分析队列</button></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="tab-collect" class="tab-panel">
+        <section id="flow-live-card" class="card flow-collection"><div><h2>采集群消息</h2><p id="flow-collect-status">正在检查采集条件…</p><p id="flow-collect-groups" class="muted"></p><button id="flow-use-import" class="button" type="button">改用手动导入</button></div>      <div class="listener-control">
+        <span id="listener-dot" class="status-dot"></span>
+        <span id="listener-status">读取状态中</span>
+        <button id="listener-toggle" class="button primary" type="button" disabled>启动监听</button>
+      </div>
+</section>
+        <section id="flow-import-card"><div class="flow-guidance">导入群消息后，同样可以使用 AI 整理信息和生成报告。</div>      <section id="tab-sources" class="import-workspace">
+        <div class="flow-import-layout">
+          <details class="card advanced-bind"><summary>高级来源管理</summary>
+            <div class="card-title"><h2>项目与消息来源</h2></div>
+            <form id="project-create" class="delivery-inline">
+              <label><span>新项目名称</span><input id="project-name" class="text-input" maxlength="100" required placeholder="例如：验收交付" /></label>
+              <button type="submit" class="button">创建项目</button>
+            </form>
+            <form id="source-bind" class="delivery-form">
+              <label><span>项目</span><select id="delivery-project" required></select></label>
+              <label><span>来源方式</span><select id="source-kind"><option value="import">手动导入</option><option value="decoder">本机微信采集</option></select></label>
+              <label><span>精确群名</span><select id="source-group" required></select><small>可选群名来自提取规则白名单。</small></label>
+              <label><span>显示名称</span><input id="source-display" class="text-input" maxlength="200" required placeholder="例如：项目验收群" /></label>
+              <button class="button primary" type="submit">绑定来源</button>
+            </form>
+            <div id="delivery-source-list" class="delivery-source-list" aria-live="polite"></div>
+          </details>
+          <section class="card">
+            <div class="card-title"><h2>导入消息</h2><span class="badge">TXT / CSV</span></div>
+            <form id="import-preview-form" class="delivery-form">
+              <label><span>导入到</span><select id="import-source" required></select></label>
+              <div class="delivery-inline"><label><span>格式</span><select id="import-format"><option value="txt">TXT</option><option value="csv">CSV</option><option value="paste">粘贴文本</option></select></label><label><span>选择 UTF-8 文件</span><input id="import-file" type="file" accept=".txt,.csv,text/plain,text/csv" /></label></div>
+              <label><span>消息文本</span><textarea id="import-content" rows="9" required placeholder="[2026-10-09 09:00:00] 同事甲: 请补充验收拓扑"></textarea><small>CSV 列：source_message_id,timestamp,sender,content。一次最多 2 MiB / 2000 条。</small></label>
+              <details><summary>为无时间或发送人的文本补齐信息</summary><div class="delivery-inline"><label><span>发送人</span><input id="import-default-sender" class="text-input" maxlength="200" /></label><label><span>发送时间（北京时间）</span><input id="import-default-time" class="text-input" type="datetime-local" step="1" /></label></div></details>
+              <button class="button" type="submit">预览并检查</button>
+            </form>
+          </section>
+        </div>
+        <section id="import-preview-card" class="card" hidden>
+          <div class="card-title"><h2>导入预览</h2><span id="import-summary" class="muted"></span></div>
+          <p id="import-duplicates" class="muted"></p>
+          <ul id="import-errors" class="import-errors"></ul>
+          <div class="table-wrap"><table><thead><tr><th>原文件行</th><th>发送时间</th><th>发送人</th><th>正文</th></tr></thead><tbody id="import-preview-rows"></tbody></table></div>
+          <div class="delivery-inline import-confirm"><label><input id="import-accept-valid" type="checkbox" /> 仅导入有效行（错误行跳过）</label><button id="import-commit" class="button primary" type="button" disabled>确认导入</button><span id="import-result" role="status"></span></div>
+        </section>
+      </section>
+</section>
+        <section class="card flow-received"><div class="card-title"><h2>收到的消息</h2><span id="flow-received-count" class="badge">0 条</span></div><div id="flow-received-list" class="flow-received-list" class="evidence-list"></div><p class="muted">显示当前空间最近 8 条消息。</p></section>
+        <details id="flow-capture-records" class="flow-records card"><summary>环境诊断与全局记录 <span id="flow-message-count" class="badge">0 条</span></summary>      <section id="tab-data" class="collection-records">
+        <div id="compatibility-banner" class="compatibility-banner" role="status">
+          <span class="banner-icon">!</span>
+          <div><strong id="compatibility-title">正在检查本机监听环境</strong><p id="compatibility-detail">请稍候…</p></div>
+          <div class="banner-actions">
+            <span id="compatibility-tag" class="banner-tag">探测中</span>
+            <details class="listener-details">
+              <summary>详情</summary>
+              <div class="listener-popover">
+                <div class="listener-detail-title"><strong id="listener-detail-platform">本机监听链路</strong><span id="runtime-state" class="state-pill">未知</span></div>
+                <dl class="runtime-facts">
+                  <div><dt>微信进程</dt><dd id="wechat-running">—</dd></div>
+                  <div><dt>微信版本</dt><dd id="wechat-version">—</dd></div>
+                  <div><dt>消息分片</dt><dd id="database-count">—</dd></div>
+                  <div><dt>WAL 文件</dt><dd id="wal-count">—</dd></div>
+                  <div><dt>SHM 文件</dt><dd id="shm-count">—</dd></div>
+                  <div><dt>当前账号</dt><dd id="selected-account">—</dd></div>
+                  <div><dt>解码配置</dt><dd id="decoder-profile">—</dd></div>
+                  <div><dt>密钥验证</dt><dd id="key-validated">—</dd></div>
+                  <div><dt>Schema</dt><dd id="schema-fingerprint">—</dd></div>
+                  <div><dt>布局指纹</dt><dd id="layout-fingerprint">—</dd></div>
+                  <div><dt>持久高水位</dt><dd id="message-high-water">—</dd></div>
+                  <div><dt>运行详情</dt><dd id="listener-runtime-detail">—</dd></div>
+                  <div><dt>最近数据变化</dt><dd id="last-wal-activity">—</dd></div>
+                  <div><dt>最近解码</dt><dd id="last-decode">—</dd></div>
+                </dl>
+                <ul id="blocker-list" class="blocker-list"></ul>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="stats">
+          <article><span>群聊消息</span><strong id="metric-messages">—</strong></article>
+          <article><span>待复核</span><strong id="metric-pending">—</strong></article>
+          <article><span>已确认</span><strong id="metric-confirmed">—</strong></article>
+          <article><span>数据变化</span><strong id="metric-wal-events">—</strong></article>
+        </div>
+
+        <section class="card review-card">
+          <div class="card-title">
+            <div><h2>待复核问题</h2><span class="muted">命中 @我、@指定人员、问题表达或关键词后进入这里</span></div>
+            <span id="pending-badge" class="badge">0</span>
+          </div>
+          <div id="question-batch-toolbar" class="question-batch-toolbar" hidden>
+            <label><input id="question-select-all" type="checkbox" /><span>全选本页</span></label>
+            <span id="question-selected-count" class="muted">已选 0 条</span>
+            <div>
+              <button id="question-batch-confirm" class="button primary small" type="button" disabled>批量确认</button>
+              <button id="question-batch-ignore" class="button small" type="button" disabled>批量忽略</button>
+            </div>
+          </div>
+          <div id="question-list" class="question-list loading">正在加载…</div>
+          <div id="question-pagination" class="question-pagination" hidden>
+            <span id="question-page-info" class="muted">第 1/1 页</span>
+            <div><button id="question-prev" class="button small" type="button">上一页</button><button id="question-next" class="button small" type="button">下一页</button></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <div><h2>本机采集记录</h2><span class="muted">展示通过群白名单的本机采集及手动导入消息</span></div>
+            <span id="last-updated" class="muted">—</span>
+          </div>
+          <form id="message-search-form" class="message-toolbar">
+            <input id="message-search" class="text-input" type="search" maxlength="100" placeholder="检索群名、发送人或消息正文" autocomplete="off" />
+            <button class="button" type="submit">检索</button>
+            <button id="message-search-clear" class="button ghost" type="button">清除</button>
+            <select id="message-page-size" aria-label="每页条数">
+              <option value="10">每页 10 条</option>
+              <option value="20" selected>每页 20 条</option>
+              <option value="50">每页 50 条</option>
+            </select>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>时间</th><th>群聊</th><th>发送人</th><th>消息内容</th><th>命中规则</th></tr></thead>
+              <tbody id="message-list"><tr><td colspan="5">正在加载…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="message-pagination">
+            <span id="message-page-info" class="muted">第 1/1 页 · 共 0 条</span>
+            <div><button id="message-prev" class="button small" type="button">上一页</button><button id="message-next" class="button small" type="button">下一页</button></div>
+          </div>
+        </section>
+      </section>
+
+</details>
+        <div class="flow-actions"><button class="button" data-goto="rules" type="button">← 调整规则</button><button id="flow-collect-next" class="button primary" data-goto="workbench" type="button">消息已就绪，去 AI 分析 →</button></div>
+      </section>
+      <section id="tab-rules" class="tab-panel">
+        <form id="rules-form" class="card rules-card">
+          <div class="card-title"><div><h2>设置关注规则</h2><span class="muted">规则帮助标记重点消息；AI 可以进一步整理所采集的群消息。</span></div><span id="rules-updated" class="muted"></span></div>
+          <div class="form-grid">
+            <label hidden><span>监听群聊</span><textarea id="allowed-groups" rows="5" placeholder="每行一个精确群名"></textarea><small>支持多群，每行一个；每个群首次启用时按下方保留天数导入历史，之后转为增量监听。</small></label>
+            <label hidden><span>我的微信昵称</span><textarea id="self-names" rows="5" placeholder="每行一个昵称"></textarea><small>用于识别正文中的 @我。</small></label>
+            <label><span>@微信名（指定人员）</span><textarea id="target-names" rows="5" placeholder="每行一个微信名，可不输入 @"></textarea><small>文本正文 @名单中任一人员时进入提取；留空则不启用。</small></label>
+            <label><span>附加关键词</span><textarea id="keywords" rows="5" placeholder="每行一个，例如：延期、风险、投诉"></textarea></label>
+          </div>
+          <div class="setting-row">
+            <label class="switch-label"><input id="require-at-me" type="checkbox" /><span class="switch"></span><span>仅标记 @我的消息</span></label>
+            <label class="retention-label"><span>历史导入与记录保留</span><input id="retention-days" class="text-input" type="number" min="1" max="365" value="7" /><span>天</span></label>
+          </div>
+          <div class="rule-note"><strong>内置判断</strong><span>@我 / @指定人员 / 问号 / 请问 / 如何 / 是否 / 谁负责 / 请确认 / 请处理 / 请跟进 / 请答复</span></div>
+          <section class="rule-note automation-options" aria-label="自动整理设置">
+            <label class="consent-line"><input id="flow-auto-results" type="checkbox" checked />自动整理并更新结果</label>
+            <p class="muted">开启后，新采集或导入的消息会自动分析，结果直接进入“信息与报告”。已有历史消息可另行手动分析。</p>
+            <label class="consent-line"><input id="flow-auto-consent" type="checkbox" />同意本空间配置群的后续脱敏文本持续发送至 DeepSeek</label>
+            <p id="flow-auto-rule-state" class="muted" role="status"></p>
+          </section>
+          <div class="flow-actions"><button class="button" data-goto="setup" type="button">← 修改群名称</button><button class="button primary" type="submit">保存规则，开始采集 →</button></div>
+        </form>
+      </section>
+
+      <section id="tab-results" class="tab-panel"><div class="flow-guidance flow-status-banner"><span id="flow-results-status" role="status"></span><button class="button" data-goto="workbench" type="button">查看分析状态</button></div>        <section class="card work-items-section">
+          <div class="card-title"><h2>项目事项</h2><span id="item-count" class="badge">0</span></div>
+          <div class="delivery-inline work-filters"><label>显示事项<select id="work-visibility"><option value="active">当前事项</option><option value="withdrawn">已撤回</option></select></label><label>复核状态<select id="work-review"><option value="">全部复核状态</option><option value="pending">待复核</option><option value="confirmed">已确认</option><option value="ignored">已忽略</option></select></label><label>处理状态<select id="work-status"><option value="">全部处理状态</option><option value="open">待处理</option><option value="in_progress">处理中</option><option value="waiting_confirmation">待确认结果</option><option value="resolved">已解决</option></select></label></div>
+          <div id="item-list" class="item-grid"></div>
+          <div class="delivery-inline work-pagination"><button id="work-prev" class="button" type="button">上一页</button><span id="work-page"></span><button id="work-next" class="button" type="button">下一页</button></div>
+        </section>
+<details id="flow-report" class="flow-report card"><summary data-tab="followup">生成跟进报告与导出</summary>      <section id="tab-followup" class="followup-workspace">
+        <form id="followup-form" class="card delivery-form">
+          <h2>跟进报告</h2><p class="muted">基于当前事项生成快照，已确认与待复核分开呈现，保留消息依据和分析覆盖范围。</p>
+          <div class="form-grid"><label>报告项目<select id="followup-project" required></select></label><label>开始日期<input id="followup-start" type="date" required /></label><label>结束日期<input id="followup-end" type="date" required /></label></div>
+          <div class="delivery-inline"><button id="followup-generate" class="button primary" type="submit">生成跟进报告</button><label>历史报告<select id="followup-history"></select></label></div>
+        </form>
+        <section id="followup-result" class="card" hidden><p id="followup-summary" class="coverage-note"></p><div id="followup-downloads" class="delivery-inline"></div><div id="followup-content" class="report-preview"></div></section>
+      </section>
+</details></section>
+<div id="flow-analysis-next" class="flow-actions" hidden><button class="button primary" data-goto="results" type="button">查看提取信息与报告 →</button></div>
+    </main>
+    <dialog id="model-settings-dialog" class="settings-dialog" aria-labelledby="model-settings-title"><div class="dialog-heading"><div><p class="dialog-eyebrow">系统设置</p><h2 id="model-settings-title">模型配置</h2></div><button id="model-settings-close" class="button" type="button" aria-label="关闭模型设置">关闭</button></div>      <section id="tab-ai" class="model-workspace">
+        <form id="ai-config-form" class="card delivery-form ai-config-card">
+          <div class="card-title"><h2>DeepSeek 模型设置</h2><span id="ai-key-state" class="badge">未配置密钥</span></div>
+          <p class="muted">连通测试仅向 DeepSeek 发送构造的验收拓扑样例。工作消息由工作台确认批次或已启用的来源后续分析发送。</p>
+          <div class="form-grid">
+            <label><span>API 地址</span><select id="ai-base-url"><option value="https://api.deepseek.com">https://api.deepseek.com</option><option value="https://api.deepseek.com/v1">https://api.deepseek.com/v1</option></select></label>
+            <label><span>模型 ID</span><input id="ai-model" class="text-input" required maxlength="100" placeholder="deepseek-flash" /></label>
+            <label><span>API Key</span><input id="ai-key" class="text-input" type="password" autocomplete="off" maxlength="512" placeholder="留空保留已有密钥" /><small>保存在后端私有配置中，不会回显。</small></label>
+          </div>
+          <details class="flow-advanced"><summary>分析参数（可选）</summary>
+          <div class="form-grid">
+            <label><span>请求超时（秒）</span><input id="ai-timeout" class="text-input" type="number" required min="1" max="60" /></label>
+            <label><span>每日请求上限</span><input id="ai-budget" class="text-input" type="number" required min="1" max="1000" /></label>
+            <label><span>最大输出 token</span><input id="ai-tokens" class="text-input" type="number" required min="128" max="8192" /></label>
+          </div>
+          <div class="form-grid"><label><span>每批新消息上限</span><input id="ai-batch" class="text-input" type="number" required min="1" max="80" /></label><label><span>请求字符上限</span><input id="ai-input-limit" class="text-input" type="number" required min="1000" max="30000" /></label></div>
+          </details>
+          <label class="consent-line"><input id="ai-enabled" type="checkbox" /> 启用 AI 分析（手动批次仍需确认，自动分析需按来源启用）</label>
+          <small>关闭后暂停排队任务，正在分析的任务可在工作台队列中取消。</small>
+          <label class="delivery-inline"><input id="ai-clear-key" type="checkbox" /> 清除本机保存的密钥</label>
+          <div class="delivery-inline"><button class="button primary" type="submit">保存模型配置</button><button id="ai-test" class="button" type="button">测试已保存的配置</button></div>
+          <p id="ai-test-result" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+</dialog>
+    <dialog id="work-dialog" class="work-dialog" aria-labelledby="work-dialog-title"><div class="card-title"><h2 id="work-dialog-title">事项详情</h2><button id="work-dialog-close" class="button" type="button">关闭</button></div><div id="work-dialog-body"></div></dialog>
+
+    <footer><span id="footer-platform">LOCAL POC · 127.0.0.1:8791</span><span>结果可修改与撤回，完成状态由你决定</span></footer>
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+  </body>
+</html>

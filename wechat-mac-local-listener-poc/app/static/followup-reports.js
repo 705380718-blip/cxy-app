@@ -1,0 +1,28 @@
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id), el=(t,text,cls)=>{const n=document.createElement(t);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+  const types={issue:'问题',task:'任务',decision:'决策',risk:'风险'};
+  async function api(url,method='GET',data){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})});const v=await r.json();if(!r.ok)throw Error(typeof v.detail==='string'?v.detail:'请检查字段和时间范围');return v;}
+  function notify(text,error=false){const n=el('div',text,error?'toast error':'toast');n.setAttribute('role',error?'alert':'status');$('toast-region').append(n);setTimeout(()=>n.remove(),7000);}
+  async function busy(button,fn){if(button.disabled)return;button.disabled=true;try{await fn();}catch(e){notify(e.message,true);}finally{button.disabled=false;}}
+  function link(text,url){const a=el('a',text,'button');a.href=url;a.setAttribute('download','');return a;}
+  function options(select,rows){const old=select.value;select.replaceChildren();rows.forEach(([id,name])=>select.add(new Option(name,id)));if([...select.options].some(o=>o.value===old))select.value=old;}
+  async function projects(){const v=await api('/api/projects');options($('followup-project'),v.items.filter(p=>p.enabled).map(p=>[p.id,p.name]));if(document.body.dataset.projectId)$('followup-project').value=document.body.dataset.projectId;}
+  function showReport(r){if(String(r.project_id)!==$('followup-project').value)return;$('followup-start').value=r.snapshot.start_date;$('followup-end').value=r.snapshot.end_date;const c=r.coverage;$('followup-result').hidden=false;$('followup-summary').textContent=`消息 ${c.message_count} 条 · 成功分析 ${c.analyzed_count} 条 · 未成功分析 ${c.unanalysed_count} 条 · 失败 ${c.job_counts.failed} 批 · 尚未采纳 ${c.pending_proposal_count} 条建议`;renderReport(r);$('followup-downloads').replaceChildren(link('下载 Markdown',`/api/followup-reports/${r.id}/export?format=markdown`),link('下载 CSV 与证据',`/api/followup-reports/${r.id}/export?format=csv`));}
+  function renderReport(r){
+    const s=r.snapshot,c=r.coverage,root=$('followup-content');const statuses={open:'待处理',in_progress:'处理中',waiting_confirmation:'待确认结果',resolved:'已解决'};
+    const time=value=>value?new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',dateStyle:'short',timeStyle:'short',hour12:false}).format(new Date(value)):'未明确';
+    root.replaceChildren(el('h2',`${s.project_label} · 跟进报告`),el('p',`${s.start_date} 至 ${s.end_date} · 北京时间 · 生成于 ${time(s.generated_at)}`,'muted'),el('p','本报告保留生成时的当前事项状态。覆盖范围仅指本机已入库文本，未成功分析不能视作无风险。','coverage-note'));
+    root.append(el('h3','来源范围'));c.sources.forEach(source=>root.append(el('p',`${source.label} · ${source.kind==='import'?'手动导入':'本机采集'} · ${source.message_count} 条消息 · 未成功分析 ${source.unanalysed_count} 条 · 当前白名单${source.allowed?'内':'外'}`)));
+    for(const [review,title] of [['confirmed','已确认事项'],['pending','待复核事项']]){root.append(el('h3',title));const items=s.items.filter(i=>i.review_status===review);if(!items.length)root.append(el('p','暂无。','muted'));for(const item of items){const card=el('section',undefined,'followup-item');card.append(el('h4',`#${item.id} · ${item.title}`),el('p',`${types[item.type]} · ${statuses[item.work_status]} · 版本 ${item.version}`,'muted'),el('p',`责任人：${item.owner||'待确认'}；期限：${item.due_text||'未明确'}；确认截止时间：${time(item.due_at)}`),el('p',`进展：${item.latest_progress||'暂无'}`));const details=el('details');details.append(el('summary','查看消息依据'));const seen=new Set();for(const e of item.evidence){if(seen.has(e.message_id))continue;seen.add(e.message_id);details.append(el('p',`#${e.message_id} · 来源${e.source_id} · ${e.sender} · ${time(e.timestamp)}${e.outside_period?' · 跨期依据':''}：${e.text}${e.quote_text?'；引用：'+e.quote_sender+' / '+e.quote_text:''}`));}card.append(details);root.append(card);}}
+    root.append(el('h3','尚未采纳的 AI 建议'));if(!s.pending_proposals.length)root.append(el('p','暂无。','muted'));s.pending_proposals.forEach(p=>root.append(el('p',`建议 #${p.id} · ${p.title} · 须人工复核`)));root.append(el('small','下载使用人物/来源代号与规则脱敏，发布前仍需核对正文。'));
+  }
+  async function reports(){const project=$('followup-project').value;if(!project)return;const v=await api(`/api/followup-reports?project_id=${project}`);if($('followup-project').value!==project)return;options($('followup-history'),[['','选择已生成报告'],...v.items.map(r=>[r.id,`${r.start_date} — ${r.end_date} · #${r.id}`])]);}
+  function init(){const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());$('followup-start').value=today;$('followup-end').value=today;['followup-start','followup-end'].forEach(id=>$(id).max=today);
+    $('followup-form').addEventListener('submit',e=>{e.preventDefault();busy($('followup-generate'),async()=>{if(!$('followup-project').value)throw Error('请先创建项目');showReport(await api('/api/followup-reports','POST',{project_id:Number($('followup-project').value),start_date:$('followup-start').value,end_date:$('followup-end').value}));await reports();});});
+    $('followup-project').onchange=()=>{ $('followup-result').hidden=true;reports().catch(e=>notify(e.message,true));};$('followup-history').onchange=()=>{if($('followup-history').value)busy($('followup-generate'),async()=>showReport(await api(`/api/followup-reports/${$('followup-history').value}`)));};
+  }
+  document.addEventListener("delivery:step",e=>{if(e.detail.tab==="results")projects().then(reports).catch(e=>notify(e.message,true));});
+  document.addEventListener("delivery:scope",()=>{$("followup-result").hidden=true;projects().then(reports).catch(e=>notify(e.message,true));});
+  init();
+})();
