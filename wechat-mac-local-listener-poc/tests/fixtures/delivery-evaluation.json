@@ -1,0 +1,14 @@
+{
+  "dataset_label":"构造样例-三类事项流程验收",
+  "data_origin":"constructed",
+  "messages":[
+    {"id":"m1","timestamp":"2026-10-10T09:00:00+08:00","sender":"构造客户甲","content":"接口报错，无法登录，请问如何处理？"},
+    {"id":"m2","timestamp":"2026-10-10T09:01:00+08:00","sender":"构造同事甲","content":"我负责，明天 12:00 提交验收拓扑。"},
+    {"id":"m3","timestamp":"2026-10-10T09:02:00+08:00","sender":"构造负责人甲","content":"本次先验收单点登录，批量导出安排下一期。"}
+  ],
+  "labels":[
+    {"id":"L1","type":"issue","title":"接口登录报错","evidence_message_ids":["m1"]},
+    {"id":"L2","type":"task","title":"提交验收拓扑","evidence_message_ids":["m2"]},
+    {"id":"L3","type":"decision","title":"先验收单点登录","evidence_message_ids":["m3"]}
+  ]
+}
