@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>交付小助手 · Mac 部署与使用手册</title>
+<style>
+:root{color-scheme:light;--ink:#192b39;--muted:#526371;--brand:#176c69;--line:#dbe3e7}*{box-sizing:border-box}body{margin:0;background:#f3f6f7;color:var(--ink);font:16px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}main{max-width:980px;margin:40px auto;padding:52px;background:white;border:1px solid var(--line);border-radius:18px}h1{font-size:36px;line-height:1.3;margin:12px 0}h2{font-size:25px;margin:42px 0 14px;border-bottom:2px solid var(--line);padding-bottom:8px}h3{font-size:19px;margin:24px 0 8px}p{margin:10px 0}.eyebrow{color:var(--brand);font-weight:700}.lead{font-size:18px;color:var(--muted)}nav{background:#f1f7f6;padding:20px;border-radius:12px;display:flex;flex-wrap:wrap;gap:10px 24px}a{color:var(--brand);text-decoration:underline}table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}th,td{padding:12px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:#eef4f5}code{background:#edf2f4;padding:2px 5px;border-radius:4px;word-break:break-all}pre{padding:16px;white-space:pre-wrap;background:#edf2f4;overflow-wrap:anywhere}.note{border-left:4px solid var(--brand);padding:12px 18px;background:#edf7f5;margin:20px 0}.warn{border-left-color:#a26618;background:#fff7e7}.check{list-style:none;padding:0}.check li{margin:10px 0}.check input{margin-right:9px}footer{color:var(--muted);font-size:13px;margin-top:40px}@media(max-width:700px){main{margin:0;padding:24px;border:0;border-radius:0}h1{font-size:29px}table{display:block;overflow-x:auto}}@media print{body{background:white;font-size:11pt}main{margin:0;padding:0;border:0;max-width:none}nav{display:none}h2{break-after:avoid}tr,.note{break-inside:avoid}thead{display:table-header-group;break-after:avoid}tbody tr:first-child{break-before:avoid}a{color:inherit}input{appearance:auto}body{font-size:10.5pt;line-height:1.65}h2{font-size:19pt;margin:26px 0 10px}h3{margin:16px 0 6px}p{margin:8px 0}main{padding:0}li{break-inside:avoid}@page{size:A4;margin:18mm}}
+</style></head><body><main>
+<div class="eyebrow">交付小助手 / MAC 接收方版</div><h1>从收到软件包到第一条群消息</h1><p class="lead">部署、日常使用与数据维护手册<br>业务版本 0.5.7 · 构建 recipient-20261109-wx415 · 2026-11-09</p>
+<nav><a href="#first">首次使用</a><a href="#wechat">配置微信</a><a href="#daily">日常使用</a><a href="#ai">AI 设置</a><a href="#verify">验收清单</a><a href="#backup">备份与升级</a><a href="#trouble">故障排查</a><a href="#remove">卸载与反馈</a></nav>
+<div class="note"><b>第一次使用按此顺序：</b>解压 → 打开菜单 → 环境检查 → 首次配置 → 启动 → 填写群名 → 开始采集 → 发送测试消息。只需要整理聊天文件时，可直接选择“导入模式”。</div>
+<div class="note"><b>微信 4.1.15（270115）升级说明：</b>旧包在首次配置前阻止此版本。请从旧菜单停止服务，完整解压本新版，再双击新版 <code>start.command</code>，选择 <b>2 → 配置本机微信监听</b>。不需要卸载微信或删除原数据。此构建现可进入本机验证；密钥、完整性及消息字段全部通过后才启用采集。通过后仍需发送一条唯一编号测试消息。</div>
+<h2 id="first">1. 安装与首次使用</h2>
+<table><thead><tr><th>条件</th><th>说明</th></tr></thead><tbody><tr><td>电脑</td><td>Apple Silicon（M 系列）Mac。“苹果菜单 → 关于本机”可查看芯片和系统。Intel 不适用。</td></tr><tr><td>系统</td><td>内置运行时最低为 macOS 11；微信自身可能要求更高系统。菜单会显示实际版本，本构建未覆盖所有系统版本实测。</td></tr><tr><td>运行环境</td><td>包内已带 Python 3.11.15 和全部运行依赖，不需要安装 Python、Homebrew 或开发工具。日常启动不下载依赖。</td></tr><tr><td>空间与网络</td><td>首次准备微信副本需至少 3 GB 可用空间。文件导入、规则整理、报告可离线；微信登录和 AI 分析需要网络。</td></tr></tbody></table>
+<ol><li>完整解压 ZIP，将整个文件夹放到本机可写目录，如“文稿/交付小助手”。不要从压缩包预览中运行，也不要只复制启动文件。</li><li>双击 <code>start.command</code>，会打开中文终端菜单。不要移动或删除包内的 <code>python</code>、<code>app</code>、<code>tools</code> 目录。</li><li>输入 <b>1</b> 检查环境；成功会显示 macOS、Python、微信版本与采集配置状态。</li><li>输入 <b>2</b> 完成首次配置。可选“仅使用聊天文件导入”或“配置本机微信监听”。</li><li>输入 <b>3</b> 启动并自动打开浏览器。默认地址为 <code>http://127.0.0.1:8792/</code>，以菜单实际输出为准。</li></ol>
+<p>服务在后台运行，关闭菜单终端或浏览器不会停止它。需要停止时，再次双击 <code>start.command</code>，选择 <b>4</b>。不自动开机启动；重启电脑后需重新启动服务，并在网页点击“开始采集”。</p>
+<h2 id="wechat">2. 配置本机微信监听</h2>
+<div class="note warn">这是本机非官方采集方式。只处理你本人有权访问的群聊。首次准备涉及临时微信副本和进程内密钥获取；日常监听读取本机数据库副本。软件没有官方全版本兼容承诺。</div>
+<h3>2.1 查看版本与账号</h3>
+<p>先在官方微信登录，打开准备监测的测试群，再关闭本工具服务。菜单选择“首次配置 → 配置本机微信监听”。工具列出本机账号目录供你选择，不会在多账号时自行猜测。</p>
+<table><thead><tr><th>微信版本 / 构建</th><th>本包处理方式</th></tr></thead><tbody><tr><td>4.1.11.55</td><td>允许进入配置，仍须在本机完成密钥和数据库验证。</td></tr><tr><td>4.1.12 / build 269341</td><td>只接受对应构建；仍需接收方验证新消息。</td></tr><tr><td>4.1.13 / build 269629</td><td>只接受对应构建；仍需接收方验证新消息。</td></tr><tr><td>4.1.15 / build 270115</td><td>本版新增的待实机验收构建。允许进入首次准备，必须通过本机全部数据库及消息结构校验；没有本机验证记录时不能启动采集。</td></tr><tr><td>其他版本或构建</td><td>暂停采集配置，可使用导入模式并向发布者反馈版本。不需要降级微信或关闭系统保护。</td></tr></tbody></table>
+<p>4.1.11.55—4.1.13 来自历史本机记录。4.1.15（270115）由接收者截图确认版本，发布者尚未取得此构建的真实数据库验收结果；是否兼容须以本节校验及第 5 节测试群验收为准。</p>
+<h3>2.2 选择密钥准备方式</h3>
+<p><b>已有本人密钥：</b>选择“导入自己已有的微信密钥 JSON”，在文件选择窗口选择该账号的密钥文件。工具只接受联系人和全部消息分片都可验证的文件，不能使用他人的密钥。</p>
+<p><b>首次准备：</b>手动退出官方微信（⌘Q），选择“在此电脑首次准备”。阅读说明后输入 <code>YES</code>。工具复制并临时签名微信副本，在副本启动前装入采集钩子，仅收集所选账号数据库对应的派生密钥。</p>
+<ol><li>等待临时微信副本打开；按客户端要求完成登录，打开需要监测的群。</li><li>终端显示“已验证 X / Y 个数据库”，最长等待三分钟；不要把等待过程误认为已成功。</li><li>工具仅在全部必要密钥、解密副本完整性和数据库结构验证通过后保存配置。失败会明确说明，不会假装开启采集。</li><li>结束后临时副本自动关闭并删除；重新打开“应用程序”中的官方微信。</li><li>启动本工具，在网页配置精确群名、本人昵称，然后点击“开始采集”。</li></ol>
+<p>工具不会改动官方微信应用、强制退出官方微信、关闭 SIP/Gatekeeper 或要求管理员密码。若副本无法启动或系统拒绝准备操作，按故障排查反馈；不要反复关闭系统保护。</p>
+<p>日常解码每轮检查版本与各分片密钥。微信更新、换账号或新增分片后，如果校验失败，应停止服务、重新配置；没有覆盖的版本等待适配。</p>
+<h2 id="daily">3. 日常使用</h2>
+<ol><li><b>微信与群聊：</b>新建整理空间；填写群的完整名称和自己的昵称。多个群按页面提示输入；同名群无法唯一定位时应先消除歧义。</li><li><b>采集规则：</b>设置关键词、关注人员、@我规则和消息保留天数。首次历史窗口默认 7 天，只有本机已有的聊天记录可以读取。</li><li><b>开始采集：</b>点击开始，观察状态和最近消息。微信需正常登录；电脑睡眠、关机或服务停止期间不实时采集。恢复后的补采受本机历史、留存窗口和密钥可用性限制。</li><li><b>AI 分析：</b>可选功能，按下一节配置；未配置 AI 时可导入、按规则整理、手工建立事项与生成报告。</li><li><b>信息与报告：</b>核对原文、采纳事项并更新进展；选择日期生成报告，导出 Markdown 或 CSV。AI 结果不等于人工确认，也不代表事项已完成。</li></ol>
+<p>当前重点支持文本与结构化引用文本；图片显示占位，不提供图片识别、语音转写或文件正文提取。默认保留 7 天，过期清理会影响关联结果与报告；已导出的文件和备份由使用者自行管理。</p>
+<h3>使用文件导入</h3><p>菜单选择 <b>5</b> 生成当天的构造 TXT/CSV 样例；网页切换为导入来源，先预览再确认。TXT 与 CSV 二选一，不要把同一内容的两种格式重复导入。单次限 2 MiB / 2000 行。</p>
+<pre><code>[当天日期 09:00:00] 构造同事甲: 我负责今天补齐拓扑并提交。</code></pre>
+<p>TXT 以实际的 <code>YYYY-MM-DD HH:MM:SS</code> 替换示例日期；CSV 为 UTF-8，表头 <code>source_message_id,timestamp,sender,content</code>。历史日期需覆盖在配置的留存窗口内。</p>
+<h2 id="ai">4. AI 配置、费用与数据范围</h2>
+<table><thead><tr><th>凭据</th><th>用途</th><th>准备方式</th></tr></thead><tbody><tr><td>微信数据库密钥</td><td>在本机解码所选账号的微信数据</td><td>首次配置工具本地准备，或导入本人已有文件</td></tr><tr><td>DeepSeek API Key</td><td>调用云端模型分析选定消息</td><td>使用者自行提供，在网页右上角设置中填写</td></tr></tbody></table>
+<p>AI 默认不启用。由 Key 所属账号承担调用费用；调用失败重试也可能产生请求。菜单启动与环境检查不会代你配置模型，也不会主动发送群聊测试。</p>
+<ol><li>右上角设置保存自己的 Key，先使用构造样例完成连接测试。</li><li>选择项目、来源与消息范围，预览脱敏正文，确认同意发送后再分析。规则脱敏不能保证移除所有业务秘密，必须自行核对。</li><li>需要自动整理时，在采集规则中主动勾选并确认后续消息发送范围；自动模式从启用后的新入库消息开始，历史需手动分析。</li><li>不再需要时取消自动整理并保存；关闭全局 AI 暂停分析队列。已发送的请求无法撤回，已有结果保留。</li></ol>
+<h2 id="verify">5. 收到软件后的验收清单</h2>
+<p>以下清单应由接收者在自己的 Mac 上完成。页面勾选不自动上传、不持久保存；可打印或另存为 PDF 留档。</p>
+<ul class="check"><li><label><input type="checkbox">环境检查通过，记录 Mac 系统、芯片及微信版本。</label></li><li><label><input type="checkbox">不开启微信和 AI，导入当日构造样例，消息可查看，能生成并导出报告。</label></li><li><label><input type="checkbox">首次微信配置明确显示成功；重新打开官方微信和本工具。</label></li><li><label><input type="checkbox">在获准测试群发送唯一编号，例如 MAC-日期-随机四位数；工具收到且群名、时间、正文一致。</label></li><li><label><input type="checkbox">同一编号只出现一次；停止并重启服务、重新开始采集后仍无重复；再发第二个编号确认新消息继续到达。</label></li><li><label><input type="checkbox">多群、@本人、规则与实际需求相符；图片等限制已了解。</label></li><li><label><input type="checkbox">仅在需要 AI 时，配置自己的 Key，用构造数据分析并核对结果。</label></li><li><label><input type="checkbox">停止服务后备份；对测试数据完成恢复演练；确认升级不会覆盖原数据。</label></li></ul>
+<p>如果首次配置或新消息未通过，请按导入模式使用并反馈版本，不要将“网页可打开”当成“监测已成功”。长期运行建议另记录连续 24 小时、重启、睡眠唤醒和多群高频消息情况。</p>
+<h2 id="backup">6. 数据位置、备份、恢复与升级</h2>
+<p>本接收方版数据保存在：</p><pre><code>~/Library/Application Support/交付小助手-mac/</code></pre>
+<table><thead><tr><th>目录</th><th>用途</th></tr></thead><tbody><tr><td>config</td><td>采集设置、微信密钥、每次启动生成的运行配置</td></tr><tr><td>data</td><td>业务数据库；private 中保存 AI 配置。可能包含群消息和密钥</td></tr><tr><td>vault / tmp</td><td>本机解密副本和临时准备文件；停止后可清理，不能外发</td></tr><tr><td>backups</td><td>由菜单生成的备份 ZIP，不含可重建的解密副本或日志</td></tr><tr><td>logs / support / samples</td><td>本机服务日志、脱敏诊断、构造样例</td></tr></tbody></table>
+<h3>备份与恢复</h3><p>先选菜单 <b>4</b> 停止服务，再选 <b>6</b> 备份。备份包含业务库、采集配置、微信密钥和模型配置，文件权限仅当前用户可读；<b>不是加密备份</b>，不要外发或放进公共同步目录。需跨设备保管时，请由自己使用可信加密方式保存。</p>
+<p>恢复时选择 <b>7</b>，选择本工具备份，确认后执行。工具先核对路径、哈希、版本及数据库完整性，再自动备份当前状态并替换。格式不匹配时不会恢复；失败会保留或回退原状态。当前接受本构建及 2026-11-05 接收方包的备份，且数据库版本不能高于本程序。恢复会保留备份中的 AI 开关，启动前应确认原自动分析设置仍符合你的意图。未来版本需要迁移验证。</p>
+<h3>升级与旧包迁移</h3><ol><li>停止旧服务，先备份，保留旧包和校验文件。</li><li>本接收方版升级：解压新包到新目录；数据目录独立于软件，勿删除数据目录。首次启动前检查新版本兼容说明。</li><li>从旧 <code>wechat-delivery-offline-0.5.x</code> 包迁移：停止旧包，菜单选 <b>9</b>，选择含 <code>runtime/data/delivery.db</code> 的旧解压目录。工具复制业务库和模型配置；当前已有业务库时拒绝覆盖。</li><li>迁移后重新完成微信采集配置；AI 会暂停，请核对模型与自动分析范围后自行启用。</li><li>源码开发版及其他历史 App 使用不同数据路径，不能直接使用菜单 9；请向发布者确认迁移方案。</li></ol><p>数据库升级后不要直接用旧程序打开；回退应停止新版本，使用升级前备份配合原版本。旧导出文件不会自动迁移或删除。</p>
+<h2 id="trouble">7. 打不开或收不到消息怎么办</h2>
+<table><thead><tr><th>现象</th><th>处理</th></tr></thead><tbody><tr><td>系统提示无法验证开发者 / 阻止打开</td><td>先核对发布者与 ZIP 的 SHA-256。依照 macOS“系统设置 → 隐私与安全性”中当前文件的允许打开提示操作；该选项随系统版本变化。可参考 <a href="https://support.apple.com/zh-cn/102445">Apple 官方说明</a>。不要关闭系统整体安全保护。</td></tr><tr><td>命令没有执行权限</td><td>终端输入 <code>chmod +x </code>（末尾空格），将 <code>start.command</code> 拖入终端，回车后重试；不要修改其他目录权限。</td></tr><tr><td>内置 Python 被隔离，无法运行</td><td>确认文件来自可信发布者且 ZIP 校验一致后，可由本人在终端输入 <code>xattr -dr com.apple.quarantine </code>（末尾空格），将本软件解压文件夹拖入再回车。仅限该文件夹，不作用于整个系统。管理策略禁止时请联系管理员或发布者，不绕过策略。</td></tr><tr><td>“不支持架构” / Bad CPU type</td><td>确认是 M 系列并使用原生终端，没有勾选通过 Rosetta 打开；Intel 不能使用该包。</td></tr><tr><td>缺少 Python / 文件找不到</td><td>此包已内置运行时；请重新完整解压，核对文件是否被移动、隔离或清理，不要另装不匹配的 Python 覆盖它。</td></tr><tr><td>端口占用</td><td>菜单选择 8 改为 8794 等独立端口，再启动。不会自动结束其他应用；5173 / 8000 不可选。</td></tr><tr><td>找不到微信账号 / Operation not permitted</td><td>检查官方微信是否登录和安装位置。仅当系统明确拒绝文件访问时，按系统提示给运行菜单的终端授予所需访问权限；单位设备先遵循管理策略。</td></tr><tr><td>版本不在列表 / 缺少分片密钥</td><td>停止服务，核对版本，重新配置。未知版本使用导入模式，提供脱敏诊断等待适配。</td></tr><tr><td>密钥准备超时 / 副本打不开</td><td>确认官方微信已自行退出、所选账号正确、空间充足；副本登录后打开测试群。未成功前不启用采集；用菜单 10 导出脱敏诊断，其中会记录失败阶段。不要向别人发送密钥文件或聊天库。</td></tr><tr><td>网页可打开但没有新消息</td><td>核对群完整名称、同名群、官方微信登录、开始采集按钮、版本与密钥提示、保留天数；发送新的唯一编号文本验收。</td></tr><tr><td>AI 没有结果 / 分析失败</td><td>确认模型已启用、Key 和网络可用、额度及预算足够、来源范围正确、已同意发送；检查队列状态。AI 问题不代表本机采集一定失败。</td></tr><tr><td>菜单提示另一个工具正在运行</td><td>关闭先前打开的菜单后再试。退出菜单不会结束后台服务。</td></tr></tbody></table>
+<p>ZIP 校验：终端输入 <code>shasum -a 256 </code> 后拖入 ZIP，比较输出与随附 <code>.zip.sha256</code> 的摘要。不要从来历不明的消息复制整段终端命令。</p>
+<h2 id="remove">8. 卸载与问题反馈</h2>
+<p><b>仅移除程序：</b>先从菜单停止服务，再把解压的软件文件夹移到废纸篓；数据和备份仍保留。</p>
+<p><b>同时移除本工具数据：</b>确认已经保管所需备份后，Finder“前往 → 前往文件夹”输入上面的 Application Support 路径，把该文件夹移到废纸篓；其中包括本工具复制的微信密钥、AI 配置、解密副本与备份。自己另存的导出、外部备份和原始密钥文件需要分别处理。不要删除微信官方数据目录。</p>
+<p><b>反馈：</b>菜单 <b>10</b> 生成 <code>diagnostic.json</code>，不含账号、路径、聊天和密钥。把它连同“哪一步失败、界面提示、发生时间”发给给你软件的人。截图应遮挡群名和正文；不要发送业务数据库、完整服务日志、微信密钥或 AI Key。支持联系人由发布者在发送消息中提供。</p>
+<footer>本手册可离线阅读；附带 manual.pdf 打印版。软件源组件与许可见 third-party-notices.md，版本变更见 release-notes.md。</footer>
+</main></body></html>
