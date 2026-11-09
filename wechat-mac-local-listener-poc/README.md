@@ -23,7 +23,7 @@
 启动独立开发版（复用已安装的 `.venv`）：
 
 ```bash
-./start-delivery-dev.sh
+bash start-delivery-dev.sh
 ```
 
 默认开发地址为 `http://127.0.0.1:8792/`，独立数据库为 `~/Library/Application Support/交付小助手-dev/data/delivery.db`。原工具工作库不受影响。默认关闭微信解码并使用空的微信数据目录；若端口已占用，入口直接失败，不结束其他进程。可以通过 `WML_PORT`、`WML_DATABASE_PATH` 或 `WML_ENV_FILE` 指定另一份配置。
@@ -165,7 +165,7 @@ powershell -ExecutionPolicy Bypass -File packaging/windows/build-windows-package
 ```bash
 cd <项目目录>
 chmod +x start-mac.sh
-./start-mac.sh
+bash start-mac.sh
 ```
 
 macOS 原链路已在微信 `4.1.11.55` 和升级后的 `4.1.12 (269341)` 上做过本机实验，包括指定群历史读取和编号增量。macOS 仍使用原有“最大已验证版本”门禁；Windows 使用更严格的 exact profile 门禁，两者不能混用。
