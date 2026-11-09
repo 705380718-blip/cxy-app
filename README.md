@@ -41,6 +41,14 @@ cd geometry-app
 node --test tests/geometry-app.test.mjs
 ```
 
+### 交付小助手 · Mac 微信群聊监测
+
+路径：[wechat-mac-local-listener-poc/](./wechat-mac-local-listener-poc/)
+
+包含本地采集、文件导入、事项跟进、可选 AI 分析、自动测试及 Mac 接收方打包工具。2026-11-09 新增微信 4.1.15（270115）候选适配，须通过接收方本机兼容检查，目标版本真机验证仍待完成。
+
+使用与构建说明见 [项目说明](./wechat-mac-local-listener-poc/README.md)。
+
 ## Notes
 
 本仓库不提交依赖目录、构建产物、本地数据库、运行日志、私有配置和导出文件。
