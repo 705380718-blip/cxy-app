@@ -1,0 +1,50 @@
+{
+  "profiles": [
+    {
+      "id": "windows-wechat-4x-template",
+      "enabled": false,
+      "version": "",
+      "build": "",
+      "layout_fingerprint": "",
+      "schema_fingerprint": "",
+      "crypto": {
+        "cipher": "aes-256-cbc-raw-key",
+        "page_size": 4096,
+        "reserve_size": 80,
+        "page_authentication": "not-yet-verified",
+        "iv_size": 16,
+        "hmac_size": 64,
+        "hmac_key_size": 32,
+        "hmac_material": "ciphertext-iv-pgno",
+        "hmac_key_source": "sqlcipher4-derived",
+        "hmac_kdf_iterations": 2,
+        "hmac_salt_mask": 58,
+        "page_number_endian": "little",
+        "exclude_page1_salt": true
+      },
+      "schema": {
+        "key_database_globs": [
+          "db_storage/contact/contact.db",
+          "db_storage/message/message_*.db"
+        ],
+        "contact_relative_path": "db_storage/contact/contact.db",
+        "contact_table": "contact",
+        "contact_id_column": "username",
+        "contact_name_columns": ["remark", "nick_name", "alias"],
+        "message_glob": "db_storage/message/message_*.db",
+        "message_table_prefix": "Msg_",
+        "message_table_hash": "md5",
+        "message_id_column": "server_id",
+        "message_local_id_column": "local_id",
+        "message_type_column": "local_type",
+        "message_sender_column": "real_sender_id",
+        "message_time_column": "create_time",
+        "message_content_column": "message_content",
+        "message_compressed_column": "compress_content",
+        "member_table": "Name2Id",
+        "member_id_column": "rowid",
+        "member_name_column": "user_name"
+      }
+    }
+  ]
+}
